@@ -1,6 +1,6 @@
+print('¡Hola mundo!')
+2 + 2
 1 / 0
-
-print 10
 
 if True:
     a = 1
