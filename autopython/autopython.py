@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import code
 import colorama
 import console
 import io
@@ -18,6 +17,8 @@ from pygments.token import Token
 from pygments.lexers import PythonConsoleLexer, Python3TracebackLexer
 from pygments.console import ansiformat
 from pygments.formatters import TerminalFormatter
+
+from code import InteractiveInterpreter
 
 colorama.init()
 
@@ -105,7 +106,7 @@ TERMINAL_COLORS = {
 }
 
 
-class PresenterInterpreter(code.InteractiveInterpreter):
+class PresenterInterpreter(InteractiveInterpreter):
     def compilesource(self, source, filename='<stdin>', symbol='single'):
         try:
             code = self.compile(source, filename, symbol)
@@ -123,7 +124,6 @@ class HighlightingInterpreter(PresenterInterpreter):
         colorscheme = {token: (color, color) for token, color in TERMINAL_COLORS.items()}
         self._formatter = TerminalFormatter(colorscheme=colorscheme)
 
-
     def highlight_error(self, method, *args, **kwargs):
         new_stderr = io.StringIO()
         old_stderr, sys.stderr = sys.stderr, new_stderr
@@ -135,17 +135,15 @@ class HighlightingInterpreter(PresenterInterpreter):
         sys.stderr.write(highlight(output, self._lexer, self._formatter))
         sys.stderr.flush()
 
-
     def showtraceback(self):
         self.highlight_error(super().showtraceback)
-
 
     def showsyntaxerror(self, filename):
         self.highlight_error(super().showsyntaxerror, filename)
 
 
 def lower_upper_key(char):
-    return (char.lower(), char.upper())
+    return char.lower(), char.upper()
 
 
 class Presenter(object):
@@ -158,18 +156,13 @@ class Presenter(object):
     KEY_SHELL = lower_upper_key('s')
     KEY_EXIT = lower_upper_key('q')
 
-
     def __init__(self, filename, output=None, width=80, colors=True,
                  animation=True, typing_delay=40, logging=False):
-        if output is None:
-            self.output = sys.stdout
-        else:
-            self.output = output
-
+        self.output = output or sys.stdout
         self.logging = logging
         if logging:
-            time = datetime.now().strftime('-%Y-%m-%d')
-            log_name = os.path.splitext(filename)[0] + time + '.log'
+            self.time = datetime.now().strftime('-%Y-%m-%d')
+            log_name = os.path.splitext(filename)[0] + self.time + '.log'
             self.logger = open(log_name, 'at')
             self.logger.write('\n')
             bar = '=' * 34
@@ -181,7 +174,7 @@ class Presenter(object):
 
         self.lexer = PythonConsoleLexer(python3=True)
         self.width = self.current_width = width - 1
-        
+
         self.ps1 = self.hl_ps1 = '>>> '
         self.ps2 = self.hl_ps2 = '... '
 
@@ -193,7 +186,6 @@ class Presenter(object):
         self.reset_interpreter()
         self.load_file(filename)
 
-
     def reset_interpreter(self):
         self.interpreter = HighlightingInterpreter() if self.colors else PresenterInterpreter()
         self.ns = self.interpreter.locals
@@ -203,10 +195,8 @@ class Presenter(object):
         self.state = Presenter.READY_TO_TYPE
         self.index = 0
 
-
     def load_file(self, filename):
         self.statements = script_parser.parse_file(filename)
-
 
     def log(self, message, *rest):
         if self.logging:
@@ -216,7 +206,6 @@ class Presenter(object):
             for line in rest:
                 print(indent, line.rstrip(), file=self.logger)
 
-
     def begin(self):
         cprt = 'Type "help", "copyright", "credits" or "license" for more information.'
         self.write('Python %s on %s\n%s\n' % (sys.version, sys.platform, cprt))
@@ -224,16 +213,13 @@ class Presenter(object):
         self.prompt()
         self.log('In the beginning...')
 
-
     def prompt(self):
         self.write(self.hl_ps1)
         self.state = Presenter.READY_TO_TYPE
 
-
     def cancel(self):
         self.write(' ^C\n', ansiformat('*red*', 'KeyboardInterrupt') if self.colors else 'KeyboardInterrupt', '\n')
         self.prompt()
-
 
     def end(self):
         if self.state != Presenter.READY_TO_TYPE:
@@ -251,7 +237,6 @@ class Presenter(object):
             self.log(reason)
             self.logger.close()
 
-
     def prev(self):
         if self.index > 1 or (self.index == 1 and self.state == Presenter.READY_TO_TYPE):
             if self.state != Presenter.READY_TO_TYPE:
@@ -264,7 +249,6 @@ class Presenter(object):
             return self.next()
         else:
             return self.index < len(self.statements)
-
 
     def next(self):
         if self.state == Presenter.READY_TO_TYPE and self.index < len(self.statements):
@@ -283,7 +267,7 @@ class Presenter(object):
         elif self.state == Presenter.READY_TO_EXECUTE:
             line_number, *_ = self.statements[self.index-1]
             self.log('Executing statement {} (line {}):'.format(self.index, line_number))
-            
+
             self.write('\n')
             if self._code_to_execute is not None:
                 self.interpreter.runcode(self._code_to_execute)
@@ -293,7 +277,7 @@ class Presenter(object):
         elif self.state == Presenter.READY_TO_FAIL:
             line_number, *_ = self.statements[self.index-1]
             self.log('Raising exception on statement {} (line {}):'.format(self.index, line_number))
-            
+
             self.write('\n')
             if self._code_to_fail is not None:
                 self.interpreter.compilesource(self._code_to_fail)
@@ -302,14 +286,12 @@ class Presenter(object):
 
         return self.state != Presenter.READY_TO_TYPE or self.index < len(self.statements)
 
-
     def go_to(self, n):
         if self.state != Presenter.READY_TO_TYPE:
             self.next()
 
         if n < 0:
             n = len(self.statements) + n + 1
-
 
         if 1 <= n <= len(self.statements):
             self.log('Jumping to statement {} (line {}).'.format(n, self.statements[n-1][0]))
@@ -331,7 +313,6 @@ class Presenter(object):
                     self.animation = old_anim
 
         return self.next()
-
 
     def interact(self):
         if self.state != Presenter.READY_TO_TYPE:
@@ -371,13 +352,11 @@ class Presenter(object):
         self.log('Leaving interactive mode.')
         self.write('\r', self.hl_ps1)
 
-
     def write(self, text, *more_text):
         self.output.write(text)
         for t in more_text:
             self.output.write(t)
         self.output.flush()
-
 
     def show_code(self, code, index=None, index_line=-1):
         index_str = '  ({})'.format(index) if index_line >= 0 else ''
@@ -480,7 +459,6 @@ class Presenter(object):
         show(colorize(strip_last_newline(add_index_and_animations(process_code()))))
         console.enable_echo()
 
-
     def run(self):
         try:
             self.begin()
@@ -488,7 +466,6 @@ class Presenter(object):
             more_sentences = True
             while True:
                 key = console.getch()
-                # print('Key code:', repr(key))
                 if key in Presenter.KEY_PREV:
                     more_sentences = self.prev()
 

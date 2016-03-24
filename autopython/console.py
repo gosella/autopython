@@ -47,7 +47,7 @@ if os.name == 'nt':
         sbi = CONSOLE_SCREEN_BUFFER_INFO()
         ret = windll.kernel32.GetConsoleScreenBufferInfo(console_handle, byref(sbi))
         if ret == 0:
-            return (0, 0)
+            return 0, 0
         return (sbi.srWindow.Right - sbi.srWindow.Left + 1,
                 sbi.srWindow.Bottom - sbi.srWindow.Top + 1)
 
@@ -104,7 +104,7 @@ elif os.name == 'posix':
             # when output is redirected
             # [ ] TODO: check fd with os.isatty
             pass
-        return (winsize[1], winsize[0])
+        return winsize[1], winsize[0]
 
     import tty
     import termios
@@ -125,7 +125,7 @@ elif os.name == 'posix':
 
             # clear input buffer placing all available chars into morech
             newattr = termios.tcgetattr(fd)   # change terminal settings
-                                              # to allow non-blocking read
+            #  to allow non-blocking read
             newattr[6][termios.VMIN] = 0      # CC structure
             newattr[6][termios.VTIME] = 0
             termios.tcsetattr(fd, termios.TCSANOW, newattr)
