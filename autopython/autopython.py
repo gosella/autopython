@@ -2,11 +2,10 @@
 # -*- coding: utf-8 -*-
 
 import colorama
-import console
+from autopython import console, script_parser
 import io
 import os
 import random
-import script_parser
 import sys
 import time
 
