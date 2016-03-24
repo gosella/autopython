@@ -219,7 +219,7 @@ class Presenter(object):
 
     def begin(self):
         cprt = 'Type "help", "copyright", "credits" or "license" for more information.'
-        self.write('Python %s on %s\n%s\n' % (sys.version, sys.platform, cprt))
+        self.write('AutoPython %s on %s\n%s\n' % (sys.version, sys.platform, cprt))
         self.index = 0
         self.prompt()
         self.log('In the beginning...')
