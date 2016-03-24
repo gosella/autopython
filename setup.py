@@ -11,8 +11,8 @@ setup(
   keywords = ['python3', 'presentation', 'autoscripting'],
   classifiers = [],
   scripts = ['bin/autopython'],
-  maintainer = 'Federico Gonzalez',
-  maintainer_email = 'federicogonzalez761@gmail.com',
+  maintainer = 'Germán Osella Massa',
+  maintainer_email = 'german.osella@nexo.unnoba.edu.ar',
   data_files = ['autopython/autopython.py', 'autopython/console.py', 'autopython/script_parser.py'],
   license = "GPLv3",
   install_requires=[
