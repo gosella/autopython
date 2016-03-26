@@ -5,13 +5,23 @@ AutoPython
 AutoPython se hace pasar por el shell de Python en el que en lugar de esperar el ingreso de sentencias, a éstas se las toma de un script normal de Python y se simula el ingreso de las mismas como si se las estuviera escribiendo por teclado, haciendo además resaltado de sintaxis con colores y permitiendo la navegación rápida entre las sentencias usando un número de índice asignado a cada una. Ideal para demostraciones o presentaciones en vivo con mucho código para mostrar. AutoPython está escrito para Python 3.
 
 
+Instalación:
+------------
+
+Si tenés [pip](http://www.pip-installer.org/) instalado, alcanza con ejecutar:
+
+```
+$ pip install autopython
+```
+
+
 Requerimientos:
 ---------------
 
 AutoPython tiene como dependencias los siguientes módulos:
 
-- colorama
-- Pygments
+- [Colorama](https://github.com/tartley/colorama)
+- [Pygments](http://pygments.org/)
 
 
 Como usar AutoPython:
@@ -20,7 +30,7 @@ Como usar AutoPython:
 Simplemente ejecutándolo dándole como parámetro el nombre el archivo fuente que se quiere presentar.
 
 ```
-$ python autopython.py tutorial.py
+$ autopython tutorial.py
 ```
 
 El script dado deberá contener cada una de las sentencias o fragmentos de código a mostrar y esta herramienta se encargará de simular durante una presentación el ingreso de cada una de esas sentencias, como si se las estuviera escribiendo directamente en el propio shell de Python.
@@ -59,7 +69,7 @@ Cosas por hacer:
 ----------------
 
 - Agregar parámetros para la línea de comandos que permitan configurar las opciones disponibles.
-- Separar la lógica de la presentación, para poder simular/utilizar otros shells (IPython, te estoy mirando...).
+- Separar la lógica de la presentación, para poder simular/utilizar otros shells (consola de IPython, te estoy mirando...).
 - Más temas de colores para el resaltado de sintaxis.
 - English translation.
 - ???
@@ -69,5 +79,5 @@ Cosas por hacer:
 Licencia:
 ---------
 
-Copyright Germán Osella Massa 2016. Licencia GPLv3. Ver archivo [LICENSE](https://github.com/gosella/autopython/blob/master/LICENSE.txt).
+Copyright Germán Osella Massa 2016. Licencia GPLv3. Ver archivo [LICENSE.txt](https://github.com/gosella/autopython/blob/master/LICENSE.txt).
 
