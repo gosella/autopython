@@ -6,9 +6,8 @@ import io
 import re
 import tokenize
 
-def parse_file(filename, ps1=None, ps2=None):
-    if ps1 is None: ps1 = '>>> '
-    if ps2 is None: ps2 = '... '
+
+def parse_file(filename, ps1='>>> ', ps2='... '):
 
     compiler = codeop.CommandCompiler()
 
@@ -26,10 +25,7 @@ def parse_file(filename, ps1=None, ps2=None):
         line_number += 1
         statement_current_line += 1
 
-        if not statement_started:
-            output_lines.append(ps1 + line)
-        else:
-            output_lines.append(ps2 + line)
+        output_lines.append((ps2 if statement_started else ps1) + line)
 
         is_empty_line = line.strip() == ''
         statement_started = statement_started or not is_empty_line

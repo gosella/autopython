@@ -69,5 +69,5 @@ Cosas por hacer:
 Licencia:
 ---------
 
-Copyright Germán Osella Massa 2016. Licencia GPLv3. Ver archivo [LICENSE](https://github.com/gosella/autopython/blob/master/LICENSE).
+Copyright Germán Osella Massa 2016. Licencia GPLv3. Ver archivo [LICENSE](https://github.com/gosella/autopython/blob/master/LICENSE.txt).
 
