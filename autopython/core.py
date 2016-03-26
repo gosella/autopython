@@ -18,6 +18,7 @@ from pygments.lexers import PythonConsoleLexer, Python3TracebackLexer
 from pygments.console import ansiformat
 from pygments.formatters import TerminalFormatter
 
+__version__ = '0.3'
 
 colorama.init()
 

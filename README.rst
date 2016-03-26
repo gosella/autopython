@@ -10,9 +10,9 @@ Instalación:
 
 Si tenés [pip](http://www.pip-installer.org/) instalado, alcanza con ejecutar:
 
-```
-$ pip install autopython
-```
+.. code-block:: bash
+
+	$ pip install autopython
 
 
 Requerimientos:
@@ -29,9 +29,10 @@ Como usar AutoPython:
 
 Simplemente ejecutándolo dándole como parámetro el nombre el archivo fuente que se quiere presentar.
 
-```
-$ autopython tutorial.py
-```
+.. code-block:: bash
+
+	$ autopython tutorial.py
+
 
 El script dado deberá contener cada una de las sentencias o fragmentos de código a mostrar y esta herramienta se encargará de simular durante una presentación el ingreso de cada una de esas sentencias, como si se las estuviera escribiendo directamente en el propio shell de Python.
 
