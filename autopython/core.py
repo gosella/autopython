@@ -2,13 +2,14 @@
 # -*- coding: utf-8 -*-
 
 import colorama
-from autopython import console, script_parser
 import io
 import os
 import random
 import sys
 import time
 
+from autopython import console, script_parser
+from code import InteractiveInterpreter
 from datetime import datetime
 
 from pygments import highlight
@@ -17,7 +18,6 @@ from pygments.lexers import PythonConsoleLexer, Python3TracebackLexer
 from pygments.console import ansiformat
 from pygments.formatters import TerminalFormatter
 
-from code import InteractiveInterpreter
 
 colorama.init()
 
@@ -155,17 +155,22 @@ class Presenter(object):
     KEY_SHELL = lower_upper_key('s')
     KEY_EXIT = lower_upper_key('q')
 
-    def __init__(self, filename, output=None, width=80, colors=True,
+    def __init__(self, filename, output=None, width=0, colors=True,
                  animation=True, typing_delay=40, logging=False):
         self.output = output or sys.stdout
+
+        if width < 1:
+            width = console.getwidth()
+
         self.logging = logging
         if logging:
-            self.time = datetime.now().strftime('-%Y-%m-%d')
-            log_name = os.path.splitext(filename)[0] + self.time + '.log'
+            time = datetime.now().strftime('-%Y-%m-%d')
+            log_name = os.path.splitext(filename)[0] + time + '.log'
             self.logger = open(log_name, 'at')
             self.logger.write('\n')
-            bar = '=' * 34
-            self.log(bar, '=====  AutoPython initiated  =====', bar)
+            init_msg = '=====  AutoPython initiated  ====='
+            bar = '=' * len(init_msg)
+            self.log(bar, init_msg, bar)
 
         self.colors = colors
         self.animation = animation
