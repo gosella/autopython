@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import codeop
@@ -6,9 +5,13 @@ import io
 import re
 import tokenize
 
+from collections import namedtuple
 
-def parse_file(filename, ps1='>>> ', ps2='... '):
+StatementInfo = namedtuple('StatementInfo',
+                           'line_number statement prompts first_line code')
 
+
+def parse_file(filename):
     compiler = codeop.CommandCompiler()
 
     source_lines = read_source_code(filename)
@@ -16,7 +19,7 @@ def parse_file(filename, ps1='>>> ', ps2='... '):
 
     statements = []
     statement = ''
-    output_lines = []
+    prompts = []
     statement_started = False
     statement_first_line = statement_current_line = -1
     statement_line_number = line_number
@@ -25,7 +28,8 @@ def parse_file(filename, ps1='>>> ', ps2='... '):
         line_number += 1
         statement_current_line += 1
 
-        output_lines.append((ps2 if statement_started else ps1) + line)
+        prompts.append('ps2' if statement_started else 'ps1')
+        statement += line
 
         is_empty_line = line.strip() == ''
         statement_started = statement_started or not is_empty_line
@@ -40,23 +44,19 @@ def parse_file(filename, ps1='>>> ', ps2='... '):
                 statement_first_line = statement_current_line
                 statement_line_number = line_number
 
-        if statement_started:
-            statement += line
-
         code, compiled = compile_statement(compiler, statement)
         if compiled:
-            statements.append((statement_line_number, statement, output_lines,
-                               statement_first_line, code))
+            statements.append(StatementInfo(statement_line_number, statement,
+                              prompts, statement_first_line, code))
             statement_started = False
             statement_current_line = statement_first_line = -1
             statement = ''
-            output_lines = []
+            prompts = []
 
     if statement:
         code, compiled = compile_statement(compiler, statement)
-        statements.append((statement_line_number, statement, output_lines,
-                           statement_first_line, code))
-
+        statements.append(StatementInfo(statement_line_number, statement,
+                          prompts, statement_first_line, code))
     return statements
 
 

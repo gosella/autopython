@@ -77,9 +77,10 @@ if os.name == 'nt':
     PGDN = ['\xe0', 'Q']
 
 elif os.name == 'posix':
-    from fcntl import ioctl
-    from termios import TIOCGWINSZ
-    from array import array
+    import array
+    import fcntl
+    import termios
+    import tty
 
     def _get_window_size():
         """Return (width, height) of console terminal on POSIX system.
@@ -96,18 +97,15 @@ elif os.name == 'posix':
             unsigned short ws_ypixel;   /* unused */
         };
         """
-        winsize = array("H", [0] * 4)
+        winsize = array.array("H", [0] * 4)
         try:
-            ioctl(sys.stdout.fileno(), TIOCGWINSZ, winsize)
+            fcntl.ioctl(sys.stdout.fileno(), termios.TIOCGWINSZ, winsize)
         except IOError:
             # for example IOError: [Errno 25] Inappropriate ioctl for device
             # when output is redirected
             # [ ] TODO: check fd with os.isatty
             pass
         return winsize[1], winsize[0]
-
-    import tty
-    import termios
 
     def _getch():
         fd = sys.stdin.fileno()
@@ -173,7 +171,7 @@ else:
     raise ImportError("platform not supported")
 
 
-def getwidth():
+def get_width():
     """
     Return width of available window in characters.  If detection fails,
     return value of standard width 80.  Coordinate of the last character
@@ -185,7 +183,7 @@ def getwidth():
     return _get_window_size()[0] or 80
 
 
-def getheight():
+def get_height():
     """
     Return available window height in characters or 25 if detection fails.
     Coordinate of the last line is -1 from returned value.

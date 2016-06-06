@@ -8,7 +8,7 @@ with codecs.open('README.rst', encoding='utf-8') as readme_file:
 
 setup(
   name = 'autopython',
-  version = autopython.__version__,
+  version = autopython.VERSION,
   license = 'GPLv3',
 
   description = 'Autoscripting for Python 3',
@@ -16,12 +16,12 @@ setup(
 
   packages = ['autopython'],
   scripts = ['bin/autopython'],
-  
+
   install_requires = [
     'colorama',
     'Pygments',
   ],
-  
+
   url = 'https://github.com/gosella/autopython',
   download_url = 'https://github.com/gosella/autopython',
 
@@ -29,7 +29,7 @@ setup(
   author_email = 'german.osella@nexo.unnoba.edu.ar',
   maintainer = 'Germán Osella Massa',
   maintainer_email = 'german.osella@nexo.unnoba.edu.ar',
-  
-  keywords = ['python3', 'presentation', 'autoscripting'],
+
+  keywords = ['python3', 'presentation', 'autoscripting', 'ipython'],
   classifiers = [],
 )

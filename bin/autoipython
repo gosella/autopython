@@ -7,7 +7,7 @@ from autopython import Presenter, VERSION
 def print_version(ctx, param, value):
     if not value or ctx.resilient_parsing:
         return
-    click.echo('AutoPython ' + VERSION)
+    click.echo('AutoIPython ' + VERSION)
     ctx.exit()
 
 
@@ -15,23 +15,20 @@ def print_version(ctx, param, value):
 @click.option('--highlight/--no-highlight', is_flag=True, default=True,
               help='Enable/disable code highlighting.')
 @click.option('-c', '--color-scheme', default='default',
-              help='Highligh the code using the specified color scheme.')
+              help='Highlight the code using the specified color scheme.')
 @click.option('-l', '--logging/--no-logging', is_flag=True, default=True,
               help='Log every action.')
-@click.option('-i', '--ipython/--no-ipython', is_flag=True, default=False,
-              help='Use the IPython shell.')
 @click.option('-d', '--delay', default=30, help='Typing delay.')
 @click.option('--version', is_flag=True, callback=print_version,
               expose_value=False, is_eager=True)
 @click.argument('source', type=click.Path(exists=True, file_okay=True,
                                           dir_okay=False, readable=True))
-def autopython(highlight, color_scheme, logging, ipython, delay, source):
-    from autopython.cpython import PresenterShell
+def autoipython(highlight, color_scheme, logging, delay, source):
+    from autopython.ipython import PresenterShell
 
-    shell = PresenterShell(color_scheme=color_scheme if highlight else None,
-                           use_ipython=ipython)
+    shell = PresenterShell(color_scheme=color_scheme if highlight else None,)
     presenter = Presenter(source, shell, typing_delay=delay, logging=logging)
     presenter.run()
 
 if __name__ == '__main__':
-    autopython()
+    autoipython()
