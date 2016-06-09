@@ -111,6 +111,9 @@ def ask_index(max_index, color_scheme=None):
             new_index -= 1
         else:
             new_index = None
+    except EOFError:
+        new_index = None
+        print('Canceling')
     except ValueError:
         new_index = None
         print(colored('*red*', 'Invalid index:'), repr(text), '\n'
