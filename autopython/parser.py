@@ -66,8 +66,16 @@ def read_source_code(filename):
         source_bytes = b''.join(first_lines) + source_file.read()
 
     newline_decoder = io.IncrementalNewlineDecoder(None, translate=True)
-    source_code = newline_decoder.decode(source_bytes.decode(encoding))
-    return source_code.splitlines(True)
+    try:
+        source_code = newline_decoder.decode(source_bytes.decode(encoding))
+        return source_code.splitlines(True)
+    except UnicodeDecodeError as exp:
+        line = 1 + source_bytes[:exp.end].count(b'\n')
+        last_n = 1 + source_bytes[:exp.end].rfind(b'\n')
+        column = exp.start - last_n + 1
+        msg = "'{}' codec can't decode byte on line {}, column {}".format(
+            exp.encoding, line, column)
+        raise SyntaxError(msg)
 
 
 ENCODING_RE = re.compile(r'^[ \t\f]*#.*coding[:=][ \t]*([-\w.]+)', re.ASCII)
