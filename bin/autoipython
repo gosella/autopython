@@ -1,41 +1,44 @@
 #!/usr/bin/env python3
 
-import click
+import argparse
+import os.path
 import sys
 from autopython import Presenter, VERSION
 
+parser = argparse.ArgumentParser()
+parser.add_argument('--no-highlight', dest='highlight', default=True,
+                    action='store_false', help='Disable code highlighting.')
+parser.add_argument('-c', '--color-scheme', default='default',
+                    help='Highligh code using the specified color scheme.')
+parser.add_argument('--no-logging', dest='logging', default=True,
+                    action='store_false', help='Disable logging every action '
+                    'during the presentation.')
+parser.add_argument('-d', '--delay', type=int, default=30,
+                    help='Delay (in ms) between every simulated keystroke.')
+parser.add_argument('-v', '--version', action='version',
+                    version='AutoIPython ' + VERSION)
+parser.add_argument('SOURCE')
+args = parser.parse_args()
 
-def print_version(ctx, param, value):
-    if not value or ctx.resilient_parsing:
-        return
-    click.echo('AutoIPython ' + VERSION)
-    ctx.exit()
+if not os.path.exists(args.SOURCE):
+    print("{}: file not found: '{}'".format(parser.prog, args.SOURCE),
+          file=sys.stderr)
+    sys.exit(1)
 
+from autopython.ipython import PresenterShell
 
-@click.command()
-@click.option('--highlight/--no-highlight', is_flag=True, default=True,
-              help='Enable/disable code highlighting.')
-@click.option('-c', '--color-scheme', default='default',
-              help='Highlight the code using the specified color scheme.')
-@click.option('-l', '--logging/--no-logging', is_flag=True, default=True,
-              help='Log every action.')
-@click.option('-d', '--delay', default=30, help='Typing delay.')
-@click.option('--version', is_flag=True, callback=print_version,
-              expose_value=False, is_eager=True)
-@click.argument('source', type=click.Path(exists=True, file_okay=True,
-                                          dir_okay=False, readable=True))
-def autoipython(highlight, color_scheme, logging, delay, source):
-    from autopython.ipython import PresenterShell
+color_scheme = args.color_scheme if args.highlight else None
+shell = PresenterShell(color_scheme=color_scheme)
+presenter = Presenter(shell, typing_delay=args.delay, logging=args.logging)
+try:
+    presenter.load_file(args.SOURCE)
+except OSError as exc:
+    print("{}: can't open file '{}'".format(parser.prog, args.SOURCE), exc,
+          sep='\n', file=sys.stderr)
+    sys.exit(1)
+except SyntaxError as exc:
+    print('  File "{}"\nSyntaxError: {}'.format(args.SOURCE, exc),
+          file=sys.stderr)
+    sys.exit(1)
 
-    shell = PresenterShell(color_scheme=color_scheme if highlight else None,)
-    presenter = Presenter(shell, typing_delay=delay, logging=logging)
-    try:
-        presenter.load_file(source)
-    except OSError as exc:
-        print("{}: can't open file '{}'".format(sys.argv[0], source), exc,
-              sep='\n', file=sys.stderr)
-    else:
-        presenter.run()
-
-if __name__ == '__main__':
-    autoipython()
+presenter.run()
