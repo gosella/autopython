@@ -131,3 +131,4 @@ class PresenterShell(object):
 
     def end(self):
         self._stop_shell_thread()
+        print()
