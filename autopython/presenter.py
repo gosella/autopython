@@ -18,20 +18,22 @@ class Presenter(object):
 
     BEFORE_TYPING, BEFORE_EXECUTING, BEFORE_QUITING, QUITING = range(4)
 
-    def __init__(self, filename, shell, typing_delay=30, logging=False):
-        self._filename = filename
+    def __init__(self, shell, typing_delay=30, logging=False):
         self._shell = shell
         self._typing_delay = typing_delay
         self._logging = logging
         self._logger = None
-        self.load_file(filename)
-        self._index = 0
-        self._state = Presenter.BEFORE_TYPING
+        self._script_loaded = False
 
     def load_file(self, filename):
         self._statements = parser.parse_file(filename)
+        self._script_name = filename
+        self._script_loaded = True
 
     def run(self):
+        if not self._script_loaded:
+            raise ValueError('Presentation script not loaded')
+
         self._begin()
         try:
             while self._state != Presenter.QUITING:
@@ -178,8 +180,8 @@ class Presenter(object):
             if self._logger is not None:
                 self._logger.close()
             start_time = datetime.now().strftime('%Y-%m-%d')
-            log_name = '{}-{}.log'.format(os.path.splitext(self._filename)[0],
-                                          start_time)
+            base_name = os.path.splitext(self._script_name)[0]
+            log_name = '{}-{}.log'.format(base_name, start_time)
             self._logger = open(log_name, 'at')
             init_msg = '=====  AutoPython initiated  ====='
             separator = '=' * len(init_msg)

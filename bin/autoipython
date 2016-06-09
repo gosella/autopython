@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import click
+import sys
 from autopython import Presenter, VERSION
 
 
@@ -27,8 +28,14 @@ def autoipython(highlight, color_scheme, logging, delay, source):
     from autopython.ipython import PresenterShell
 
     shell = PresenterShell(color_scheme=color_scheme if highlight else None,)
-    presenter = Presenter(source, shell, typing_delay=delay, logging=logging)
-    presenter.run()
+    presenter = Presenter(shell, typing_delay=delay, logging=logging)
+    try:
+        presenter.load_file(source)
+    except OSError as exc:
+        print("{}: can't open file '{}'".format(sys.argv[0], source), exc,
+              sep='\n', file=sys.stderr)
+    else:
+        presenter.run()
 
 if __name__ == '__main__':
     autoipython()
