@@ -4,9 +4,9 @@ import io
 import sys
 
 from code import InteractiveInterpreter
-from .highlighter import HAVE_HIGHLIGHTING
-from .highlighter import highlight, ansiformat, get_color_for, COLOR_SCHEMES
-from .highlighter import Token, TerminalFormatter, Python3Lexer, TracebackLexer
+from .highlighter import HAVE_HIGHLIGHTING, highlight, ansiformat, Token
+from .highlighter import TerminalFormatter, get_color_for, COLOR_SCHEMES
+from .highlighter import Python3Lexer, TracebackLexer, LineLexer
 from .interactions import simulate_typing, ask_index
 
 
@@ -58,6 +58,8 @@ class PresenterShell(object):
             self._hl_ps1 = ansiformat(color, self._ps1)
             self._hl_ps2 = ansiformat(color, self._ps2)
             self._lexer = Python3Lexer()
+        else:
+            self._lexer = LineLexer()
 
     def _colored(self, color, text):
         return ansiformat(color, text) if self._color_scheme else text
