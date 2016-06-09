@@ -101,13 +101,16 @@ def ask_index(max_index, color_scheme=None):
     def colored(color, text):
         return hl.ansiformat(color, text) if color_scheme else text
     try:
-        text = input(colored('*green*', '\n\nEnter new index: '))
-        new_index = int(text)
-        if new_index == 0 or abs(new_index) > max_index:
-            raise ValueError
-        if new_index < 0:
-            new_index = max_index + new_index + 1
-        new_index -= 1
+        text = input(colored('*green*', '\n\nEnter new index: ')).strip()
+        if text:
+            new_index = int(text)
+            if new_index == 0 or abs(new_index) > max_index:
+                raise ValueError
+            if new_index < 0:
+                new_index = max_index + new_index + 1
+            new_index -= 1
+        else:
+            new_index = None
     except ValueError:
         new_index = None
         print(colored('*red*', 'Invalid index:'), repr(text), '\n'
