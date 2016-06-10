@@ -121,7 +121,7 @@ class PresenterShell(object):
         print(end=self._hl_ps1, flush=True)
 
     def interact(self):
-        print(flush=True)
+        print(end='\r')
         if self._use_ipython:
             # In IPython, the special variable '_i00' contains the last
             # line entered by the user. This set up a notification for
