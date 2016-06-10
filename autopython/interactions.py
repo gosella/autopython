@@ -116,9 +116,9 @@ def ask_index(max_index, color_scheme=None):
         print('Canceling')
     except ValueError:
         new_index = None
-        print(colored('*red*', 'Invalid index:'), repr(text), '\n'
-              'Only indexes from 1 to {0} (or from -{0} to -1) '
-              'are allowed.'.format(max_index))
+        print(colored('*red*', 'Invalid index:'), repr(text),
+              '(only indexes from 1 to {0} (or from -{0} to -1) '
+              'are allowed).'.format(max_index))
     except KeyboardInterrupt:
         new_index = None
         print(colored('*red*', '\nKeyboardInterrupt'))
