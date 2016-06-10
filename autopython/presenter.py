@@ -126,9 +126,8 @@ class Presenter(object):
     def _go_to(self):
         if not self._statements:
             return
-        if self._state == Presenter.BEFORE_EXECUTING:
-            self._next()
-        elif self._state == Presenter.BEFORE_QUITING:
+        if self._state in (Presenter.BEFORE_EXECUTING,
+                           Presenter.BEFORE_QUITING):
             self._shell.control_c()
             self._state = Presenter.BEFORE_TYPING
         if self._state == Presenter.BEFORE_TYPING:
