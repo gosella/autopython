@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 
 import io
+import queue
 import sys
 
 from code import InteractiveInterpreter
+from threading import Thread
 from .highlighter import HAVE_HIGHLIGHTING, highlight, ansiformat, Token
 from .highlighter import TerminalFormatter, get_color_for, COLOR_SCHEMES
 from .highlighter import Python3Lexer, TracebackLexer, LineLexer
@@ -121,15 +123,28 @@ class PresenterShell(object):
     def interact(self):
         print(flush=True)
         if self._use_ipython:
-            self._interpreter.history_manager.reset(True)
-            self._interpreter.interact()
-            history = map(str.splitlines,
-                          self._interpreter.history_manager.input_hist_raw)
+            # In IPython, the special variable '_i00' contains the last
+            # line entered by the user. This set up a notification for
+            # every time _i00 change (i.e., the user enter a statement).
+            input_queue = queue.Queue()
+            self._interpreter.history_manager.observe(input_queue.put,
+                                                      '_i00')
+            try:
+                thread = Thread(target=self._interpreter.interact)
+                thread.start()
+                while thread.is_alive():
+                    try:
+                        statement = input_queue.get(timeout=0.2)['new']
+                        yield statement.splitlines()
+                    except queue.Empty:
+                        pass
+            finally:
+                self._interpreter.history_manager.unobserve(input_queue.put,
+                                                            '_i00')
         else:
             ps1 = self._colored('*green*', self._ps1)
             ps2 = self._colored('*green*', self._ps2)
             lines = []
-            history = []
             need_more = False
             print(end='\r', flush=True)
             while True:
@@ -144,7 +159,7 @@ class PresenterShell(object):
                         source = '\n'.join(lines)
                         need_more = self._interpreter.runsource(source)
                         if not need_more:
-                            history.append(lines)
+                            yield lines
                             lines = []
                 except KeyboardInterrupt:
                     print(self._colored('*red*', '\nKeyboardInterrupt'),
@@ -153,7 +168,6 @@ class PresenterShell(object):
                     need_more = False
             print(flush=True)
         print(end=self._hl_ps1, flush=True)
-        return history
 
     def ask_where_to_go(self, max_index):
         new_index = ask_index(max_index, self._color_scheme)

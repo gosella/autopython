@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import queue
-import threading
 
+from threading import Thread
 from IPython.lib.lexers import IPython3Lexer
 from IPython.terminal.interactiveshell import TerminalInteractiveShell
 from .highlighter import HAVE_HIGHLIGHTING
@@ -13,9 +13,10 @@ class Shell(TerminalInteractiveShell):
     INTERRUPT = object()
     END_SESSION = object()
 
-    def __init__(self, input_queue, prompt_queue, **kwargs):
+    def __init__(self, input_queue, prompt_queue, user_queue, **kwargs):
         self.__input_queue = input_queue
         self.__prompt_queue = prompt_queue
+        self.__user_queue = user_queue
         self.__interactive = True
         super(Shell, self).__init__(confirm_exit=False, **kwargs)
         # This prevents writing to the history db after every statement
@@ -27,15 +28,15 @@ class Shell(TerminalInteractiveShell):
         return super(Shell, self).interact(display_banner)
 
     def raw_input(self, prompt=''):
+        in_prompt = self.separate_in + self.prompt_manager.render('in')
         if self.__interactive:
-            return super(Shell, self).raw_input(prompt)
+            result = super(Shell, self).raw_input(prompt)
+            self.__user_queue.put((result, in_prompt == prompt))
+            return result
 
         print(end=prompt, flush=True)
-        if prompt == self.prompt_manager.render('in'):
-            prompt_len = len(self.prompt_manager.render('in', color=False))
-        else:
-            prompt_len = len(self.prompt_manager.render('in2', color=False))
-
+        raw_prompt = 'in' if in_prompt == prompt else 'in2'
+        prompt_len = len(self.prompt_manager.render(raw_prompt, color=False))
         self.__prompt_queue.put((prompt, prompt_len))
         result = self.__input_queue.get()
         if result is Shell.INTERRUPT:
@@ -51,19 +52,21 @@ class PresenterShell(object):
     def __init__(self, color_scheme='default'):
         self._input_queue = queue.Queue()
         self._prompt_queue = queue.Queue()
+        self._user_queue = queue.Queue()
         self._shell = None
         self._shell_thread = None
         self._color_scheme = color_scheme
         self._lexer = IPython3Lexer()
 
     def _create_shell(self):
-        self._shell = Shell(self._input_queue, self._prompt_queue)
+        self._shell = Shell(self._input_queue, self._prompt_queue,
+                            self._user_queue)
         if not HAVE_HIGHLIGHTING or not self._color_scheme:
             self._shell.run_line_magic('colors', 'NoColor')
 
-    def _start_shell_thread(self):
-        self._shell_thread = threading.Thread(target=self._shell.interact,
-                                              kwargs={'interactive': False})
+    def _start_shell_thread(self, interactive):
+        self._shell_thread = Thread(target=self._shell.interact,
+                                    kwargs={'interactive': interactive})
         self._shell_thread.start()
 
     def _stop_shell_thread(self):
@@ -79,12 +82,12 @@ class PresenterShell(object):
         if self._shell_thread is not None:
             self._stop_shell_thread()
         self._create_shell()
-        self._start_shell_thread()
+        self._start_shell_thread(interactive=False)
 
     def begin(self):
         self._create_shell()
         print('AutoI' + self._shell.banner, end='', flush=True)
-        self._start_shell_thread()
+        self._start_shell_thread(interactive=False)
 
     def control_c(self):
         print(end='^C')
@@ -113,12 +116,20 @@ class PresenterShell(object):
 
     def interact(self):
         self._stop_shell_thread()
-        self._shell.history_manager.reset(True)
-        self._shell.interact(interactive=True)
-        history = map(str.splitlines,
-                      self._shell.history_manager.input_hist_raw)
-        self._start_shell_thread()
-        return history
+        self._start_shell_thread(interactive=True)
+        lines = []
+        while self._shell_thread.is_alive():
+            try:
+                line, is_first_line = self._user_queue.get(timeout=0.2)
+                if is_first_line and lines:
+                    yield lines
+                    lines = []
+                lines.append(line)
+            except queue.Empty:
+                pass
+        if lines:
+            yield lines
+        self._start_shell_thread(interactive=False)
 
     def ask_where_to_go(self, max_index):
         while self._prompt_queue.qsize() == 0:
