@@ -130,27 +130,27 @@ class Presenter(object):
                            Presenter.BEFORE_QUITING):
             self._shell.control_c()
             self._state = Presenter.BEFORE_TYPING
-        if self._state == Presenter.BEFORE_TYPING:
-            new_index = self._shell.ask_where_to_go(len(self._statements))
-            if new_index is None:
-                return
-            self._log('Continuing on statement {} (line {}).'.format(
-                      new_index + 1, self._statements[new_index].line_number))
-            if new_index < self._index:
-                self._shell.reset_interpreter()
-                self._index = 0
-            if new_index > 0:
-                try:
-                    original_typing_delay = self._typing_delay
-                    self._typing_delay = 0
-                    original_logging = self._logging
-                    self._logging = False
-                    while self._index < new_index:
-                        self._next()
-                finally:
-                    self._typing_delay = original_typing_delay
-                    self._logging = original_logging
-            self._next()
+
+        new_index = self._shell.ask_where_to_go(len(self._statements))
+        if new_index is None:
+            return
+        self._log('Continuing on statement {} (line {}).'.format(
+                  new_index + 1, self._statements[new_index].line_number))
+        if new_index < self._index:
+            self._shell.reset_interpreter()
+            self._index = 0
+        if new_index > 0:
+            try:
+                original_typing_delay = self._typing_delay
+                self._typing_delay = 0
+                original_logging = self._logging
+                self._logging = False
+                while self._index < new_index:
+                    self._next()
+            finally:
+                self._typing_delay = original_typing_delay
+                self._logging = original_logging
+        self._next()
 
     def _interact(self):
         if self._state in (Presenter.BEFORE_EXECUTING,

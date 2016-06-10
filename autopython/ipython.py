@@ -42,7 +42,6 @@ class Shell(TerminalInteractiveShell):
         if result is Shell.INTERRUPT:
             raise KeyboardInterrupt
         elif result is Shell.END_SESSION:
-            print(flush=True)
             self.ask_exit()
         else:
             return result
@@ -86,7 +85,7 @@ class PresenterShell(object):
 
     def begin(self):
         self._create_shell()
-        print('AutoI' + self._shell.banner, end='', flush=True)
+        print(end='AutoI' + self._shell.banner, flush=True)
         self._start_shell_thread(interactive=False)
 
     def control_c(self):
@@ -144,4 +143,4 @@ class PresenterShell(object):
 
     def end(self):
         self._stop_shell_thread()
-        print()
+        print('\n', flush=True)
