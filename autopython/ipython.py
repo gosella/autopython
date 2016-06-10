@@ -64,10 +64,10 @@ class PresenterShell(object):
         if not HAVE_HIGHLIGHTING or not self._color_scheme:
             self._shell.run_line_magic('colors', 'NoColor')
 
-    def _start_shell_thread(self, interactive):
+    def _start_shell_thread(self, interactive, initial_separator):
         self._shell_thread = Thread(target=self._shell.interact,
                                     kwargs={'interactive': interactive})
-        self._shell.separate_in = ''
+        self._shell.separate_in = initial_separator
         self._shell_thread.start()
 
     def _stop_shell_thread(self):
@@ -83,12 +83,12 @@ class PresenterShell(object):
         if self._shell_thread is not None:
             self._stop_shell_thread()
         self._create_shell()
-        self._start_shell_thread(interactive=False)
+        self._start_shell_thread(interactive=False, initial_separator='')
 
     def begin(self):
         self._create_shell()
         print('AutoI' + self._shell.banner, flush=True)
-        self._start_shell_thread(interactive=False)
+        self._start_shell_thread(interactive=False, initial_separator='')
 
     def control_c(self):
         print(end='^C')
@@ -117,7 +117,7 @@ class PresenterShell(object):
 
     def interact(self):
         self._stop_shell_thread()
-        self._start_shell_thread(interactive=True)
+        self._start_shell_thread(interactive=True, initial_separator='\r')
         lines = []
         while self._shell_thread.is_alive():
             try:
@@ -130,7 +130,7 @@ class PresenterShell(object):
                 pass
         if lines:
             yield lines
-        self._start_shell_thread(interactive=False)
+        self._start_shell_thread(interactive=False, initial_separator='\n')
 
     def ask_where_to_go(self, max_index):
         while self._prompt_queue.qsize() == 0:
