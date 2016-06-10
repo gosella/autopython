@@ -29,6 +29,7 @@ class Shell(TerminalInteractiveShell):
 
     def raw_input(self, prompt=''):
         in_prompt = self.separate_in + self.prompt_manager.render('in')
+        self.separate_in = '\n'
         if self.__interactive:
             result = super(Shell, self).raw_input(prompt)
             self.__user_queue.put((result, in_prompt == prompt))
@@ -66,6 +67,7 @@ class PresenterShell(object):
     def _start_shell_thread(self, interactive):
         self._shell_thread = Thread(target=self._shell.interact,
                                     kwargs={'interactive': interactive})
+        self._shell.separate_in = ''
         self._shell_thread.start()
 
     def _stop_shell_thread(self):
@@ -85,7 +87,7 @@ class PresenterShell(object):
 
     def begin(self):
         self._create_shell()
-        print(end='AutoI' + self._shell.banner, flush=True)
+        print('AutoI' + self._shell.banner, flush=True)
         self._start_shell_thread(interactive=False)
 
     def control_c(self):
