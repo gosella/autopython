@@ -121,6 +121,8 @@ class PresenterShell(object):
         return history
 
     def ask_where_to_go(self, max_index):
+        while self._prompt_queue.qsize() == 0:
+            pass
         new_index = ask_index(max_index, self._color_scheme)
         if new_index is None:
             print(end=self._shell.prompt_manager.render('in'), flush=True)
