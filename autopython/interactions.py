@@ -1,8 +1,13 @@
+# -*- coding: utf-8 -*-
+
+from __future__ import print_function
+
 import random
 import signal
 import time
 
 from . import console, highlighter as hl
+from .compat import input, print
 
 
 def simulate_typing(statement, prompts, index_number=None, index_line=-1,
@@ -64,7 +69,7 @@ def simulate_typing(statement, prompts, index_number=None, index_line=-1,
                 col = new_col
 
     current_line = 0
-    delay = typing_delay / 1000
+    delay = typing_delay / 1000.0
     colorize = hl.HAVE_HIGHLIGHTING and color_scheme is not None
     color = None
 
@@ -80,7 +85,7 @@ def simulate_typing(statement, prompts, index_number=None, index_line=-1,
                 color_on, color_off = hl.ansiformat(color, '|').split('|')
                 print(end=color_on)
 
-            if typing_delay and type_it:
+            if delay and type_it:
                 for char in text:
                     print(end=char, flush=True)
                     if not char.isspace():

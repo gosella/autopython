@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 
-import queue
+from __future__ import print_function
 
 from threading import Thread
 from IPython.lib.lexers import IPython3Lexer
 from IPython.terminal.interactiveshell import TerminalInteractiveShell
+from .compat import print, queue
 from .highlighter import HAVE_HIGHLIGHTING
 from .interactions import simulate_typing, ask_index
 

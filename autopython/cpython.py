@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 
-import io
-import queue
+from __future__ import print_function
+
 import sys
 
 from code import InteractiveInterpreter
 from threading import Thread
+from .compat import input, print, queue, StringIO
 from .highlighter import HAVE_HIGHLIGHTING, highlight, ansiformat, Token
 from .highlighter import TerminalFormatter, get_color_for, COLOR_SCHEMES
 from .highlighter import Python3Lexer, TracebackLexer, LineLexer
@@ -25,16 +26,16 @@ class PresenterInterpreter(InteractiveInterpreter):
 class HighlightingInterpreter(PresenterInterpreter):
     def __init__(self, *args, **kwargs):
         scheme = COLOR_SCHEMES.get(kwargs.pop('color_scheme', 'default'), {})
-        super().__init__(*args, **kwargs)
+        PresenterInterpreter.__init__(self, *args, **kwargs)
         self._lexer = TracebackLexer()
         colors = {token: (color, color) for token, color in scheme.items()}
         self._formatter = TerminalFormatter(colorscheme=colors)
 
     def highlight_error(self, method, *args, **kwargs):
-        new_stderr = io.StringIO()
+        new_stderr = StringIO()
         old_stderr, sys.stderr = sys.stderr, new_stderr
         try:
-            method(*args, **kwargs)
+            method(self, *args, **kwargs)
         finally:
             sys.stderr = old_stderr
         output = new_stderr.getvalue()
@@ -42,10 +43,10 @@ class HighlightingInterpreter(PresenterInterpreter):
               file=sys.stderr, flush=True)
 
     def showtraceback(self):
-        self.highlight_error(super().showtraceback)
+        self.highlight_error(PresenterInterpreter.showtraceback)
 
     def showsyntaxerror(self, filename=None):
-        self.highlight_error(super().showsyntaxerror, filename)
+        self.highlight_error(PresenterInterpreter.showsyntaxerror, filename)
 
 
 class PresenterShell(object):

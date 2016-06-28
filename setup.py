@@ -1,7 +1,9 @@
-from setuptools import setup
+# -*- coding: utf-8 -*-
 
 import autopython
 import codecs
+
+from setuptools import setup
 
 with codecs.open('README.rst', encoding='utf-8') as readme_file:
     long_description = readme_file.read()
@@ -30,6 +32,6 @@ setup(
   maintainer = 'Germán Osella Massa',
   maintainer_email = 'german.osella@nexo.unnoba.edu.ar',
 
-  keywords = ['python3', 'presentation', 'autoscripting', 'ipython'],
+  keywords = ['presentation', 'automatic', 'typing', 'ipython'],
   classifiers = [],
 )

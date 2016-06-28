@@ -1,11 +1,17 @@
 # -*- coding: utf-8 -*-
 
+import codecs
 import codeop
 import io
+import os
 import re
-import tokenize
+import sys
 
 from collections import namedtuple
+
+PY2 = sys.version_info[0] == 2
+ENCODING_RE = re.compile(('' if PY2 else '(?a)') +
+                         r'^[ \t\f]*#.*coding[:=][ \t]*([-\w.]+)')
 
 StatementInfo = namedtuple('StatementInfo',
                            'line_number statement prompts first_line code')
@@ -62,8 +68,34 @@ def parse_file(filename):
 
 def read_source_code(filename):
     with open(filename, 'rb') as source_file:
-        encoding, first_lines = tokenize.detect_encoding(source_file.readline)
-        source_bytes = b''.join(first_lines) + source_file.read()
+        source_bytes = source_file.read()
+
+    encoding = 'utf-8'
+    bom_found = source_bytes.startswith(codecs.BOM_UTF8)
+    if bom_found:
+        source_bytes = source_bytes[len(codecs.BOM_UTF8):]
+
+    first_lines = source_bytes.split(os.linesep.encode('utf-8'), 2)[:2]
+    for line in first_lines:
+        try:
+            # If the line is an encoding declaration, it must be ASCII.
+            # If is not, it must be UTF-8 (the default encoding).
+            # Either way, it should be possible to decoded it as UTF-8.
+            line = line.decode('utf-8')
+        except UnicodeDecodeError:
+            raise SyntaxError('invalid or missing encoding declaration')
+
+        result = ENCODING_RE.match(line)
+        if result:
+            try:
+                codec = codecs.lookup(result.group(1))
+            except LookupError:
+                raise SyntaxError('unknown encoding: ' + result.group(1))
+
+            encoding = codec.name
+            if bom_found and encoding != 'utf-8':
+                raise SyntaxError('encoding problem: utf-8')
+            break
 
     newline_decoder = io.IncrementalNewlineDecoder(None, translate=True)
     try:
@@ -76,9 +108,6 @@ def read_source_code(filename):
         msg = "'{}' codec can't decode byte on line {}, column {}".format(
             exp.encoding, line, column)
         raise SyntaxError(msg)
-
-
-ENCODING_RE = re.compile(r'^[ \t\f]*#.*coding[:=][ \t]*([-\w.]+)', re.ASCII)
 
 
 def strip_encoding_declaration(source_lines):
