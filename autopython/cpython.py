@@ -180,7 +180,7 @@ class PresenterShell(object):
         print()
         for command, keys, description in commands_help:
             hl_keys = ','.join('[' + self._colored('*yellow*', key) + ']'
-                                for key in keys)
+                               for key in keys)
             print(' {}: {}\n   {}'.format(
                 self._colored('*green*', command), hl_keys, description))
         print(end=self._hl_ps1, flush=True)

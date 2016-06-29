@@ -69,12 +69,8 @@ AutoPython es multiplataforma y debería funcionar tanto sobre Windows como Mac 
 Cosas por hacer:
 ----------------
 
-- Agregar parámetros para la línea de comandos que permitan configurar las opciones disponibles.
-- Separar la lógica de la presentación, para poder simular/utilizar otros shells (consola de IPython, te estoy mirando...).
 - Más temas de colores para el resaltado de sintaxis.
 - English translation.
-- ???
-- Profit!
 
 
 Licencia:
