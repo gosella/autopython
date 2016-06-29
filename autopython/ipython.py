@@ -6,7 +6,7 @@ from threading import Thread
 from IPython.lib.lexers import IPython3Lexer
 from IPython.terminal.interactiveshell import TerminalInteractiveShell
 from .compat import print, queue
-from .highlighter import HAVE_HIGHLIGHTING
+from .highlighter import HAVE_HIGHLIGHTING, ansiformat
 from .interactions import simulate_typing, ask_index
 
 
@@ -140,6 +140,32 @@ class PresenterShell(object):
         if new_index is None:
             print(end=self._shell.prompt_manager.render('in'), flush=True)
         return new_index
+
+    def _fake_show(self, statement, prompts, typing_delay=0):
+        def generate_prompts():
+            renderer = self._shell.prompt_manager.render
+            for prompt in prompts:
+                kind = 'in' if prompt == 'ps1' else 'in2'
+                yield renderer(kind), len(renderer(kind, color=False))
+        while self._prompt_queue.qsize() == 0:
+            pass
+        for _ in simulate_typing(statement, generate_prompts(),
+                                 color_scheme=self._color_scheme,
+                                 typing_delay=typing_delay,
+                                 lexer=self._lexer):
+            pass
+
+    def help(self, commands_help):
+        def colored(color, text):
+            return ansiformat(color, text) if self._color_scheme else text
+        self._fake_show('help()', ['ps1'], typing_delay=30)
+        print(colored('*teal*', '\n\nAvailable actions:\n'))
+        for command, keys, description in commands_help:
+            hl_keys = ','.join('[' + colored('*yellow*', key) + ']'
+                               for key in keys)
+            print('  {}: {}\n    {}\n'.format(
+                colored('*green*', command), hl_keys, description))
+        print(end=self._shell.prompt_manager.render('in'), flush=True)
 
     def quit(self):
         self.show('quit()', ['ps1'], typing_delay=30)

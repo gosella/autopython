@@ -175,6 +175,16 @@ class PresenterShell(object):
         print(end=self._hl_ps1, flush=True)
         return new_index
 
+    def help(self, commands_help):
+        self.show('help()', ['ps1'], typing_delay=30)
+        print()
+        for command, keys, description in commands_help:
+            hl_keys = ','.join('[' + self._colored('*yellow*', key) + ']'
+                                for key in keys)
+            print(' {}: {}\n   {}'.format(
+                self._colored('*green*', command), hl_keys, description))
+        print(end=self._hl_ps1, flush=True)
+
     def quit(self):
         self.show('quit()', ['ps1'], typing_delay=30)
 

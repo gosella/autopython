@@ -12,14 +12,50 @@ def lower_upper_key(char):
     return char.lower(), char.upper()
 
 
-class Presenter(object):
-    KEY_PREV = (console.PGUP,) + lower_upper_key('p')
-    KEY_NEXT = (console.PGDN, ' ', '\n', '\r')
-    KEY_AGAIN = lower_upper_key('r')
-    KEY_GOTO = lower_upper_key('g')
-    KEY_SHELL = lower_upper_key('s')
-    KEY_EXIT = lower_upper_key('q')
+def keys_display_names(keys):
+    KEY_NAMES = {
+        ' ': 'Spacebar',
+        '\n': 'Enter',
+        '\r': 'Enter',
+        ''.join(console.PGUP): 'PgUp',
+        ''.join(console.PGDN): 'PgDn',
+    }
+    result = []
+    for key in (''.join(k) for k in keys):
+        name = KEY_NAMES.get(key, key.upper())
+        if name not in result:
+            result.append(name)
+    return result
 
+
+KEY_PREV = lower_upper_key('p') + (console.PGUP,)
+KEY_NEXT = lower_upper_key('n') + (console.PGDN, ' ', '\n', '\r')
+KEY_REPEAT = lower_upper_key('r')
+KEY_GOTO = lower_upper_key('g')
+KEY_SHELL = lower_upper_key('s')
+KEY_HELP = lower_upper_key('h') + ('?',)
+KEY_QUIT = lower_upper_key('q')
+
+
+COMMANDS_HELP = [
+    ('Previous', keys_display_names(KEY_PREV),
+     'Cancel the current typed statement and type the previous one.'),
+    ('Next', keys_display_names(KEY_NEXT),
+     'Type the next statement or execute the last statement shown.'),
+    ('Repeat', keys_display_names(KEY_REPEAT),
+     'Repeat the last executed statement.'),
+    ('Go To', keys_display_names(KEY_GOTO),
+     'Execute all the statements until just before the given one.'),
+    ('Shell', keys_display_names(KEY_SHELL),
+     'Enter an interactive session (press Ctrl-D to exit)'),
+    ('Quit', keys_display_names(KEY_QUIT),
+     'Press twice to quit.'),
+    ('Help', keys_display_names(KEY_HELP),
+     'Show this help message (in case your didn\'t guess it ;-).'),
+]
+
+
+class Presenter(object):
     BEFORE_TYPING, BEFORE_EXECUTING, BEFORE_QUITING, QUITING = range(4)
 
     def __init__(self, shell, typing_delay=30, logging=False):
@@ -45,17 +81,19 @@ class Presenter(object):
                     key = console.getch()
                 except KeyboardInterrupt:
                     continue
-                if key in Presenter.KEY_NEXT:
+                if key in KEY_NEXT:
                     self._next()
-                elif key in Presenter.KEY_PREV:
+                elif key in KEY_PREV:
                     self._prev()
-                elif key in Presenter.KEY_AGAIN:
-                    self._again()
-                elif key in Presenter.KEY_GOTO:
+                elif key in KEY_REPEAT:
+                    self._repeat()
+                elif key in KEY_GOTO:
                     self._go_to()
-                elif key in Presenter.KEY_SHELL:
+                elif key in KEY_SHELL:
                     self._interact()
-                elif key in Presenter.KEY_EXIT:
+                elif key in KEY_HELP:
+                    self._help()
+                elif key in KEY_QUIT:
                     self._quit()
         finally:
             self._end()
@@ -119,7 +157,7 @@ class Presenter(object):
             if self._index > 0:
                 self._next()
 
-    def _again(self):
+    def _repeat(self):
         if self._state == Presenter.BEFORE_TYPING:
             if self._index > 0:
                 self._index -= 1
@@ -168,6 +206,13 @@ class Presenter(object):
                 if lines:
                     self._log('Executing:', *lines)
             self._log('Leaving interactive mode.')
+
+    def _help(self):
+        if self._state in (Presenter.BEFORE_EXECUTING,
+                           Presenter.BEFORE_QUITING):
+            self._shell.control_c()
+            self._state = Presenter.BEFORE_TYPING
+        self._shell.help(COMMANDS_HELP)
 
     def _quit(self):
         if self._state in (Presenter.BEFORE_QUITING, Presenter.QUITING):
