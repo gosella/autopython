@@ -23,7 +23,7 @@ def parse_command_line(kind):
                         help='Disable code highlighting.')
     parser.add_argument('-c', '--color-scheme', default='default',
                         help='Highligh code using the specified color scheme.')
-    parser.add_argument('--no-logging', dest='logging', default=True,
+    parser.add_argument('--no-log', dest='logging', default=True,
                         action='store_false', help='Disable logging every '
                         'action during the presentation.')
     if kind is AUTOIPYTHON:
