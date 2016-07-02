@@ -12,7 +12,7 @@ Si tenés instalado pip_, alcanza con ejecutar:
 
 .. code-block:: bash
 
-	$ pip install autopython
+        $ pip install autopython
 
 
 Requerimientos:
@@ -31,7 +31,7 @@ Simplemente ejecutándolo dándole como parámetro el nombre el archivo fuente q
 
 .. code-block:: bash
 
-	$ autopython tutorial.py
+        $ autopython tutorial.py
 
 
 El script dado deberá contener cada una de las sentencias o fragmentos de código a mostrar y esta herramienta se encargará de simular durante una presentación el ingreso de cada una de esas sentencias, como si se las estuviera escribiendo directamente en el propio shell de Python.
