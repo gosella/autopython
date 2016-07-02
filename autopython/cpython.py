@@ -49,6 +49,21 @@ class HighlightingInterpreter(PresenterInterpreter):
         self.highlight_error(PresenterInterpreter.showsyntaxerror, filename)
 
 
+class Quitter(object):
+    def __init__(self, shell, func):
+        self.__shell = shell
+        self.__func = func
+
+    def __call__(self):
+        if self.__shell._interacting:
+            self.__shell._interacting = False
+        else:
+            return func()
+
+    def __repr__(self):
+        return repr(self.__func)
+
+
 class PresenterShell(object):
     def __init__(self, color_scheme='default', use_ipython=False):
         self._color_scheme = color_scheme
@@ -85,11 +100,13 @@ class PresenterShell(object):
             self._interpreter.prompt_manager.out_template = ''
             self._interpreter.prompt_manager.justify = False
             self._interpreter.separate_in = ''
-        elif HAVE_HIGHLIGHTING and self._color_scheme:
-            self._interpreter = HighlightingInterpreter(
-                color_scheme=self._color_scheme)
         else:
-            self._interpreter = PresenterInterpreter()
+            ns = {'exit': Quitter(self, exit), 'quit': Quitter(self, quit)}
+            if HAVE_HIGHLIGHTING and self._color_scheme:
+                self._interpreter = HighlightingInterpreter(
+                    color_scheme=self._color_scheme, locals=ns)
+            else:
+                self._interpreter = PresenterInterpreter(locals=ns)
 
     def begin(self):
         self.reset_interpreter()
@@ -148,7 +165,8 @@ class PresenterShell(object):
             lines = []
             need_more = False
             print(end='\r', flush=True)
-            while True:
+            self._interacting = True
+            while self._interacting:
                 try:
                     try:
                         print(end=ps2 if need_more else ps1, flush=True)
