@@ -2,6 +2,7 @@
 
 from __future__ import print_function
 
+import codecs
 import os.path
 
 from datetime import datetime
@@ -230,7 +231,7 @@ class Presenter(object):
             start_time = datetime.now().strftime('%Y-%m-%d')
             base_name = os.path.splitext(self._script_name)[0]
             log_name = '{}-{}.log'.format(base_name, start_time)
-            self._logger = open(log_name, 'at')
+            self._logger = codecs.open(log_name, 'a', encoding='utf-8')
             init_msg = '=====  AutoPython initiated  ====='
             separator = '=' * len(init_msg)
             self._log(separator, init_msg, separator)

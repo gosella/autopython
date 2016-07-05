@@ -54,11 +54,10 @@ if os.name == 'nt':
 
     def _getch():
         a = msvcrt.getwch()
-        if a == '\x00' or a == '\xe0':
+        if a == u'\x00' or a == u'\xe0':
             b = msvcrt.getwch()
             return [a, b]
-        else:
-            return a
+        return a
 
     def enable_echo():
         pass
@@ -66,14 +65,14 @@ if os.name == 'nt':
     def disable_echo():
         pass
 
-    ESC = '\x1b'
-    ENTER = '\x0d'
-    LEFT = ['\xe0', 'K']
-    UP = ['\xe0', 'H']
-    RIGHT = ['\xe0', 'M']
-    DOWN = ['\xe0', 'P']
-    PGUP = ['\xe0', 'I']
-    PGDN = ['\xe0', 'Q']
+    ESC = u'\x1b'
+    ENTER = u'\x0d'
+    LEFT = [u'\xe0', u'K']
+    UP = [u'\xe0', u'H']
+    RIGHT = [u'\xe0', u'M']
+    DOWN = [u'\xe0', u'P']
+    PGUP = [u'\xe0', u'I']
+    PGDN = [u'\xe0', u'Q']
 
 elif os.name == 'posix':
     import array

@@ -67,16 +67,18 @@ def parse_file(filename):
 
 
 def read_source_code(filename):
-    with open(filename, 'rb') as source_file:
-        source_bytes = source_file.read()
+    with open(filename, 'rUb') as source_file:
+        source_lines = source_file.read().splitlines()
+
+    if not source_lines:
+        return source_lines
 
     encoding = 'utf-8'
-    bom_found = source_bytes.startswith(codecs.BOM_UTF8)
+    bom_found = source_lines[0].startswith(codecs.BOM_UTF8)
     if bom_found:
-        source_bytes = source_bytes[len(codecs.BOM_UTF8):]
+        source_lines[0] = source_lines[0][len(codecs.BOM_UTF8):]
 
-    first_lines = source_bytes.split(os.linesep.encode('utf-8'), 2)[:2]
-    for line in first_lines:
+    for line in source_lines[:2]:
         try:
             # If the line is an encoding declaration, it must be ASCII.
             # If is not, it must be UTF-8 (the default encoding).
@@ -97,17 +99,28 @@ def read_source_code(filename):
                 raise SyntaxError('encoding problem: utf-8')
             break
 
-    newline_decoder = io.IncrementalNewlineDecoder(None, translate=True)
-    try:
-        source_code = newline_decoder.decode(source_bytes.decode(encoding))
-        return source_code.splitlines(True)
-    except UnicodeDecodeError as exp:
-        line = 1 + source_bytes[:exp.end].count(b'\n')
-        last_n = 1 + source_bytes[:exp.end].rfind(b'\n')
-        column = exp.start - last_n + 1
-        msg = "'{}' codec can't decode byte on line {}, column {}".format(
-            exp.encoding, line, column)
-        raise SyntaxError(msg)
+    output_encoding = sys.stdout.encoding
+    source_code = []
+    for line in source_lines:
+        try:
+            decoded_line = (line + b'\n').decode(encoding)
+        except UnicodeDecodeError as exp:
+            msg = "'{}' codec can't decode byte on line {}, column {}".format(
+                exp.encoding, len(source_code) + 1, exp.start)
+            raise SyntaxError(msg)
+
+        try:
+            # To test if the line can be printed on the console
+            decoded_line.encode(output_encoding)
+        except UnicodeEncodeError as exp:
+            msg = "the byte on line {}, column {} can't be printed " \
+                "(maybe using the wrong encoding '{}'?)".format(
+                len(source_code) + 1, exp.start + 1, encoding)
+            raise SyntaxError(msg)
+
+        source_code.append(decoded_line)
+
+    return source_code
 
 
 def strip_encoding_declaration(source_lines):
@@ -130,6 +143,8 @@ def strip_encoding_declaration(source_lines):
 def compile_statement(compiler, source):
     if source.endswith('\n'):
         source = source[:-1]
+    if PY2:
+        source = source.encode(sys.stdin.encoding)
     try:
         code = compiler(source, filename='<stdin>', symbol='single')
         compiled = code is not None
