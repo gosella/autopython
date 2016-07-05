@@ -58,7 +58,7 @@ class Quitter(object):
         if self.__shell._interacting:
             self.__shell._interacting = False
         else:
-            return func()
+            return self.__func()
 
     def __repr__(self):
         return repr(self.__func)
