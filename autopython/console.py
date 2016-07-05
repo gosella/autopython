@@ -1,55 +1,15 @@
 # -*- coding: utf-8 -*-
 
-# Mostly refactored from:
-# URL: https://bitbucket.org/techtonik/python-pager
-# Author:  anatoly techtonik <techtonik@gmail.com>
-# License: Public Domain (use MIT if the former doesn't work for you)
-
 import os
 import sys
 
+try:
+    from shutil import get_terminal_size
+except ImportError:
+    from backports.shutil_get_terminal_size import get_terminal_size
+
 # Dealing with the terminal in different OSs
 if os.name == 'nt':
-    # Windows constants
-    # http://msdn.microsoft.com/en-us/library/ms683231%28v=VS.85%29.aspx
-    STD_INPUT_HANDLE = -10
-    STD_OUTPUT_HANDLE = -11
-    STD_ERROR_HANDLE = -12
-
-    # get console handle
-    from ctypes import windll, Structure, byref
-    try:
-        from ctypes.wintypes import SHORT, WORD, DWORD
-    except ImportError:
-        from ctypes import c_short as SHORT, c_ushort as WORD, c_ulong as DWORD
-    console_handle = windll.kernel32.GetStdHandle(STD_OUTPUT_HANDLE)
-
-    # CONSOLE_SCREEN_BUFFER_INFO Structure
-    class COORD(Structure):
-        _fields_ = [("X", SHORT), ("Y", SHORT)]
-
-    class SMALL_RECT(Structure):
-        _fields_ = [("Left", SHORT), ("Top", SHORT),
-                    ("Right", SHORT), ("Bottom", SHORT)]
-
-    class CONSOLE_SCREEN_BUFFER_INFO(Structure):
-        _fields_ = [("dwSize", COORD),
-                    ("dwCursorPosition", COORD),
-                    ("wAttributes", WORD),
-                    ("srWindow", SMALL_RECT),
-                    ("dwMaximumWindowSize", DWORD)]
-
-    def _get_window_size():
-        """Return (width, height) of available window area on Windows.
-           (0, 0) if no console is allocated.
-        """
-        sbi = CONSOLE_SCREEN_BUFFER_INFO()
-        ret = windll.kernel32.GetConsoleScreenBufferInfo(console_handle, byref(sbi))
-        if ret == 0:
-            return 0, 0
-        return (sbi.srWindow.Right - sbi.srWindow.Left + 1,
-                sbi.srWindow.Bottom - sbi.srWindow.Top + 1)
-
     import msvcrt
 
     def _getch():
@@ -75,35 +35,13 @@ if os.name == 'nt':
     PGDN = [u'\xe0', u'Q']
 
 elif os.name == 'posix':
-    import array
-    import fcntl
+    # Mostly refactored from:
+    # URL: https://bitbucket.org/techtonik/python-pager
+    # Author:  anatoly techtonik <techtonik@gmail.com>
+    # License: Public Domain (use MIT if the former doesn't work for you)
+
     import termios
     import tty
-
-    def _get_window_size():
-        """Return (width, height) of console terminal on POSIX system.
-           (0, 0) on IOError, i.e. when no console is allocated.
-        """
-        # see README.txt for reference information
-        # http://www.kernel.org/doc/man-pages/online/pages/man4/tty_ioctl.4.html
-
-        """
-        struct winsize {
-            unsigned short ws_row;
-            unsigned short ws_col;
-            unsigned short ws_xpixel;   /* unused */
-            unsigned short ws_ypixel;   /* unused */
-        };
-        """
-        winsize = array.array("H", [0] * 4)
-        try:
-            fcntl.ioctl(sys.stdout.fileno(), termios.TIOCGWINSZ, winsize)
-        except IOError:
-            # for example IOError: [Errno 25] Inappropriate ioctl for device
-            # when output is redirected
-            # [ ] TODO: check fd with os.isatty
-            pass
-        return winsize[1], winsize[0]
 
     def _getch():
         fd = sys.stdin.fileno()
@@ -169,29 +107,6 @@ else:
     raise ImportError("platform not supported")
 
 
-def get_width():
-    """
-    Return width of available window in characters.  If detection fails,
-    return value of standard width 80.  Coordinate of the last character
-    on a line is -1 from returned value.
-
-    Windows part uses console API through ctypes module.
-    *nix part uses termios ioctl TIOCGWINSZ call.
-    """
-    return _get_window_size()[0] or 80
-
-
-def get_height():
-    """
-    Return available window height in characters or 25 if detection fails.
-    Coordinate of the last line is -1 from returned value.
-
-    Windows part uses console API through ctypes module.
-    *nix part uses termios ioctl TIOCGWINSZ call.
-    """
-    return _get_window_size()[1] or 25
-
-
 def getch():
     """
     Wait for keypress, return character or a list of characters.
@@ -200,3 +115,6 @@ def getch():
     extra symbols in input buffer, this function returns list.
     """
     return _getch()
+
+
+__all__ = ['get_terminal_size', 'enable_echo', 'disable_echo', 'getch']

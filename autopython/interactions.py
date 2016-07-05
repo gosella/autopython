@@ -14,11 +14,11 @@ def simulate_typing(statement, prompts, index_number=None, index_line=-1,
                     color_scheme=None, typing_delay=30,
                     console_width=-1, console_height=-1,
                     lexer=hl.LineLexer()):
+    size = console.get_terminal_size()
     if console_width < 1:
-        console_width = console.get_width() - 1
-
+        console_width = size.columns - 1
     if console_height < 1:
-        console_height = console.get_height() - 1
+        console_height = size.lines - 1
 
     def tokenize():
         iter_prompts = iter(prompts)
