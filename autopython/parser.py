@@ -8,8 +8,8 @@ import re
 import sys
 
 from collections import namedtuple
+from .compat import PY2
 
-PY2 = sys.version_info[0] == 2
 ENCODING_RE = re.compile(('' if PY2 else '(?a)') +
                          r'^[ \t\f]*#.*coding[:=][ \t]*([-\w.]+)')
 

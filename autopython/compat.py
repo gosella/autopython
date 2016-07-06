@@ -10,6 +10,9 @@ except ImportError:
     import Queue as queue
 
 
+PY2 = sys.version_info[0] == 2
+PY3 = sys.version_info[0] == 3
+
 if sys.version_info[:2] < (3, 3):
     _real_print = print
 
@@ -24,7 +27,7 @@ else:
     from builtins import print
 
 
-if sys.version_info[0] == 2:
+if PY2:
     input = raw_input
     try:
         from cStringIO import StringIO
@@ -34,4 +37,5 @@ else:
     from builtins import input
     from io import StringIO
 
-__all__ = ['input', 'print', 'queue', 'StringIO']
+
+__all__ = ['PY2', 'PY3', 'input', 'print', 'queue', 'StringIO']

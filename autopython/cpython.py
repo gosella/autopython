@@ -6,7 +6,7 @@ import sys
 
 from code import InteractiveInterpreter
 from threading import Thread
-from .compat import input, print, queue, StringIO
+from .compat import PY2, input, print, queue, StringIO
 from .highlighter import HAVE_HIGHLIGHTING, highlight, ansiformat, Token
 from .highlighter import TerminalFormatter, get_color_for, COLOR_SCHEMES
 from .highlighter import Python3Lexer, TracebackLexer, LineLexer
@@ -171,11 +171,15 @@ class PresenterShell(object):
                     try:
                         print(end=ps2 if need_more else ps1, flush=True)
                         line = input()
+                        if PY2:
+                            line = line.decode(sys.stdin.encoding)
                         lines.append(line)
                     except EOFError:
                         break
                     else:
                         source = '\n'.join(lines)
+                        if PY2:
+                            source = source.encode(sys.stdin.encoding)
                         need_more = self._interpreter.runsource(source)
                         if not need_more:
                             yield lines
