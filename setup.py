@@ -29,7 +29,6 @@ setup(
 
     extras_require={
         'highlighting': ['colorama', 'Pygments'],
-        ':python_version < "3.3"': ['backports.shutil_get_terminal_size'],
     },
 
     url='https://github.com/gosella/autopython',
