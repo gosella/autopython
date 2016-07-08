@@ -141,12 +141,30 @@ class PresenterShell(object):
     def interact(self):
         print(end='\r')
         if self._use_ipython:
+            # Try to determine which Traitlet API to use
+            try:
+                import traitlets
+            except ImportError:
+                from IPython.utils import traitlets
+
+            version = getattr(traitlets, 'version_info', None)
+            if version is not None and version >= (4, 1):
+                traitlets_new_api = True
+            else:
+                traitlets_new_api = False
+
             # In IPython, the special variable '_i00' contains the last
             # line entered by the user. This set up a notification for
             # every time _i00 change (i.e., the user enter a statement).
             input_queue = queue.Queue()
-            self._interpreter.history_manager.observe(input_queue.put,
-                                                      '_i00')
+            if traitlets_new_api:
+                self._interpreter.history_manager.observe(
+                    input_queue.put, '_i00')
+            else:
+                def notifier(name, new):
+                    input_queue.put({'new': new})
+                self._interpreter.history_manager.on_trait_change(
+                    notifier, '_i00')
             try:
                 thread = Thread(target=self._interpreter.interact)
                 thread.start()
@@ -157,8 +175,12 @@ class PresenterShell(object):
                     except queue.Empty:
                         pass
             finally:
-                self._interpreter.history_manager.unobserve(input_queue.put,
-                                                            '_i00')
+                if traitlets_new_api:
+                    self._interpreter.history_manager.unobserve(
+                        input_queue.put, '_i00')
+                else:
+                    self._interpreter.history_manager.on_trait_change(
+                        notifier, '_i00', remove=True)
         else:
             ps1 = self._colored('*green*', self._ps1)
             ps2 = self._colored('*green*', self._ps2)

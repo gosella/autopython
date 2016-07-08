@@ -1,2 +1,3 @@
 colorama
-Pygments
+Pygments>=0.10
+ipython>=1.0

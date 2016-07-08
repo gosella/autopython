@@ -3,11 +3,21 @@
 from __future__ import print_function
 
 from threading import Thread
-from IPython.lib.lexers import IPython3Lexer
 from IPython.terminal.interactiveshell import TerminalInteractiveShell
-from .compat import print, queue
+from .compat import PY2, print, queue
 from .highlighter import HAVE_HIGHLIGHTING, ansiformat
 from .interactions import simulate_typing, ask_index
+
+if PY2:
+    try:
+        from IPython.lib.lexers import IPythonLexer
+    except ImportError:
+        from pygments.lexers import PythonLexer as IPythonLexer
+else:
+    try:
+        from IPython.lib.lexers import IPython3Lexer as IPythonLexer
+    except ImportError:
+        from pygments.lexers import Python3Lexer as IPythonLexer
 
 
 class Shell(TerminalInteractiveShell):
@@ -57,7 +67,7 @@ class PresenterShell(object):
         self._shell = None
         self._shell_thread = None
         self._color_scheme = color_scheme
-        self._lexer = IPython3Lexer()
+        self._lexer = IPythonLexer()
 
     def _create_shell(self):
         self._shell = Shell(self._input_queue, self._prompt_queue,
