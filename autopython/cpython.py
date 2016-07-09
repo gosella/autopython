@@ -84,6 +84,7 @@ class PresenterShell(object):
 
     def reset_interpreter(self):
         if self._use_ipython:
+            import IPython
             from IPython.terminal.interactiveshell import \
                 TerminalInteractiveShell
 
@@ -95,10 +96,14 @@ class PresenterShell(object):
             if not HAVE_HIGHLIGHTING or not self._color_scheme:
                 self._interpreter.run_line_magic('colors', 'NoColor')
             # Customize IPython to make it look like the CPYthon shell
-            self._interpreter.prompt_manager.in_template = self._ps1
-            self._interpreter.prompt_manager.in2_template = self._ps2
-            self._interpreter.prompt_manager.out_template = ''
-            self._interpreter.prompt_manager.justify = False
+            if IPython.version_info >= (5, 0):
+                from IPython.terminal.prompts import ClassicPrompts
+                self._interpreter.prompts = ClassicPrompts(self._interpreter)
+            else:
+                self._interpreter.prompt_manager.in_template = self._ps1
+                self._interpreter.prompt_manager.in2_template = self._ps2
+                self._interpreter.prompt_manager.out_template = ''
+                self._interpreter.prompt_manager.justify = False
             self._interpreter.separate_in = ''
         else:
             ns = {'exit': Quitter(self, exit), 'quit': Quitter(self, quit)}
