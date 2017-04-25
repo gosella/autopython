@@ -60,6 +60,9 @@ def parse_file(filename):
             prompts = []
 
     if statement:
+        if prompts[-1] == 'ps2':
+            statement += '\n'
+            prompts.append('ps2')
         code, compiled = compile_statement(compiler, statement)
         statements.append(StatementInfo(statement_line_number, statement,
                           prompts, statement_first_line, code))
@@ -68,7 +71,8 @@ def parse_file(filename):
 
 def read_source_code(filename):
     with open(filename, 'rUb') as source_file:
-        source_lines = source_file.read().splitlines()
+        stripped_source = source_file.read().rstrip() + b'\n'
+        source_lines = stripped_source.splitlines()
 
     if not source_lines:
         return source_lines

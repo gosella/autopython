@@ -120,7 +120,7 @@ class PresenterShell(object):
                                            color_scheme=self._color_scheme,
                                            typing_delay=typing_delay):
             if line_number < last_line_number:
-                self._input_queue.put(lines[line_number].rstrip('\n'))
+                self._input_queue.put(lines[line_number])
 
     def execute(self, statement, code=None):
         print(flush=True)
