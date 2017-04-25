@@ -10,78 +10,71 @@ from . import console, highlighter as hl
 from .compat import input, print
 
 
-def simulate_typing(statement, prompts, index_number=None, index_line=-1,
-                    color_scheme=None, typing_delay=30,
-                    console_width=-1, console_height=-1,
-                    lexer=hl.LineLexer()):
+def layout_code(lexer, statement, prompts, index_number=None, index_line=-1,
+                console_width=-1, console_height=-1):
     size = console.get_terminal_size()
     if console_width < 1:
         console_width = size.columns - 1
     if console_height < 1:
         console_height = size.lines - 1
 
-    def tokenize():
-        iter_prompts = iter(prompts)
-        lines = statement.splitlines()
-        max_line = len(lines) - 1
+    if index_number is None or index_line < 0:
+        index_str = ''
+    else:
+        index_str = '  ({})'.format(index_number)
 
-        if index_number is None or index_line < 0:
-            index_str = ''
+    max_line = statement.count('\n')
+    line = 0
+    col = 0
+    iter_prompts = iter(prompts)
+    for _, ttype, value in lexer.get_tokens_unprocessed(statement):
+        if col == 0:
+            prompt, prompt_len = next(iter_prompts)
+            yield line, 0, None, '\r' + prompt, False
+            col = prompt_len
+            width = console_width - col
+            if line == index_line:
+                width -= len(index_str)
+                yield line, col, None, ' ' * width, False
+                yield line, col + width, hl.Token.Index, index_str, False
+            yield line, 0, None, '\r' + prompt, False
+        if value == '':
+            continue
+        elif value == '\n':
+            line += 1
+            col = 0
+            if line == max_line:
+                break
+            yield line, col, None, '\n', False
         else:
-            index_str = '  ({})'.format(index_number)
-
-        line = 0
-        col = 0
-        for _, ttype, value in lexer.get_tokens_unprocessed(statement):
-            if col == 0:
-                prompt, prompt_len = next(iter_prompts)
-                yield line, col, '\r' + prompt, False, None
-                col = prompt_len
-                width = console_width - col
-                if line == index_line:
-                    width -= len(index_str)
-                    yield line, col, ' ' * width, False, None
-                    color = hl.get_color_for(hl.Token.Index, color_scheme)
-                    yield line, col + width, index_str, False, color
-                yield line, 0, '\r' + prompt, False, None
-            if value == '':
-                continue
-            elif value == '\n':
-                if line == max_line:
-                    break
-
-                line += 1
+            new_col = col + len(value)
+            while new_col > width:
+                extra = new_col - width
+                yield line, col, ttype, value[:-extra], True
+                yield line, new_col - extra, None, '\n', False
+                value = value[-extra:]
                 col = 0
-                yield line, col, '\n', False, None
-            else:
-                color = hl.get_color_for(ttype, color_scheme)
-                new_col = col + len(value)
-                while new_col > width:
-                    extra = new_col - width
-                    yield line, col, value[:-extra], True, color
-                    yield line, new_col - extra, '\n', False, None
-                    value = value[-extra:]
-                    col = 0
-                    new_col = len(value)
-                    width = console_width
+                new_col = len(value)
+                width = console_width
 
-                yield line, col, value, True, color
-                col = new_col
+            yield line, col, ttype, value, True
+            col = new_col
 
-    current_line = 0
-    delay = typing_delay / 1000.0
+
+def simulate_typing(tokens, color_scheme=None, typing_delay=30):
     colorize = hl.HAVE_HIGHLIGHTING and color_scheme is not None
-    color = None
-
+    delay = typing_delay / 1000.0
+    current_line = 0
     prev_sigint_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
     try:
         console.disable_echo()
-        for line, col, text, type_it, color in tokenize():
+        for line, col, ttype, text, type_it in tokens:
             if line != current_line:
                 yield current_line
                 current_line = line
 
-            if colorize and color:
+            if colorize and ttype:
+                color = hl.get_color_for(ttype, color_scheme)
                 color_on, color_off = hl.ansiformat(color, '|').split('|')
                 print(end=color_on)
 
@@ -93,7 +86,7 @@ def simulate_typing(statement, prompts, index_number=None, index_line=-1,
             else:
                 print(end=text, flush=True)
 
-            if colorize and color:
+            if colorize and ttype:
                 print(end=color_off)
 
         yield current_line

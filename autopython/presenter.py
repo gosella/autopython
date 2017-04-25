@@ -125,8 +125,8 @@ class Presenter(object):
                 self._log('Showing statement {} (on line {}):'.format(index,
                           info.line_number),
                           *(' ' + line for line in lines if line.strip()))
-                self._shell.show(info.statement, info.prompts,
-                                 index, info.first_line, self._typing_delay)
+                self._shell.show(info.statement, info.prompts, index,
+                                 info.first_line, self._typing_delay)
                 self._state = Presenter.BEFORE_EXECUTING
             else:
                 self._quit()

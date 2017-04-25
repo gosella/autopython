@@ -6,7 +6,7 @@ from threading import Thread
 from IPython.terminal.interactiveshell import TerminalInteractiveShell
 from .compat import PY2, print, queue
 from .highlighter import HAVE_HIGHLIGHTING, ansiformat
-from .interactions import simulate_typing, ask_index
+from .interactions import layout_code, simulate_typing, ask_index
 
 if PY2:
     try:
@@ -114,11 +114,11 @@ class PresenterShell(object):
 
         lines = statement.splitlines()
         last_line_number = len(lines) - 1
-        for line_number in simulate_typing(statement, generate_prompts(),
-                                           index, index_line,
+        tokens = layout_code(self._lexer, statement, generate_prompts(),
+                             index, index_line)
+        for line_number in simulate_typing(tokens,
                                            color_scheme=self._color_scheme,
-                                           typing_delay=typing_delay,
-                                           lexer=self._lexer):
+                                           typing_delay=typing_delay):
             if line_number < last_line_number:
                 self._input_queue.put(lines[line_number].rstrip('\n'))
 
@@ -159,10 +159,10 @@ class PresenterShell(object):
                 yield renderer(kind), len(renderer(kind, color=False))
         while self._prompt_queue.qsize() == 0:
             pass
-        for _ in simulate_typing(statement, generate_prompts(),
+        tokens = layout_code(self._lexer, statement, generate_prompts())
+        for _ in simulate_typing(tokens,
                                  color_scheme=self._color_scheme,
-                                 typing_delay=typing_delay,
-                                 lexer=self._lexer):
+                                 typing_delay=typing_delay):
             pass
 
     def help(self, commands_help):

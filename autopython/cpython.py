@@ -10,7 +10,7 @@ from .compat import PY2, input, print, queue, StringIO
 from .highlighter import HAVE_HIGHLIGHTING, highlight, ansiformat, Token
 from .highlighter import TerminalFormatter, get_color_for, COLOR_SCHEMES
 from .highlighter import Python3Lexer, TracebackLexer, LineLexer
-from .interactions import simulate_typing, ask_index
+from .interactions import layout_code, simulate_typing, ask_index
 
 
 class PresenterInterpreter(InteractiveInterpreter):
@@ -129,10 +129,9 @@ class PresenterShell(object):
         ps1 = self._hl_ps1, len(self._ps1)
         ps2 = self._hl_ps2, len(self._ps2)
         hl_prompts = (ps1 if p == 'ps1' else ps2 for p in prompts)
-        for _ in simulate_typing(statement, hl_prompts, index, index_line,
-                                 color_scheme=self._color_scheme,
-                                 typing_delay=typing_delay,
-                                 lexer=self._lexer):
+        tokens = layout_code(self._lexer, statement, hl_prompts,
+                             index, index_line)
+        for _ in simulate_typing(tokens, self._color_scheme, typing_delay):
             pass
 
     def execute(self, statement, code=None):
