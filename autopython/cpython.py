@@ -95,6 +95,23 @@ class PresenterShell(object):
             self._interpreter = IPythonInterpreter(confirm_exit=False)
             if not HAVE_HIGHLIGHTING or not self._color_scheme:
                 self._interpreter.run_line_magic('colors', 'NoColor')
+
+            interpreter = self._interpreter
+            session_id = interpreter.history_manager.session_number
+            history_queue = self._history_queue = queue.Queue()
+            def monitor():
+                if not self._interacting:
+                    return
+                it = interpreter.history_manager.get_range(session_id, -1)
+                last_input = next(it, None)
+                if last_input is not None:
+                    history_queue.put(last_input[-1])
+
+            if IPython.version_info < (2, 0):
+                self._interpreter.register_post_execute(monitor)
+            else:
+                self._interpreter.events.register('post_run_cell', monitor)
+
             # Customize IPython to make it look like the CPYthon shell
             if IPython.version_info >= (5, 0):
                 from IPython.terminal.prompts import ClassicPrompts
@@ -144,54 +161,22 @@ class PresenterShell(object):
 
     def interact(self):
         print(end='\r')
+        self._interacting = True
         if self._use_ipython:
-            # Try to determine which Traitlet API to use
-            try:
-                import traitlets
-            except ImportError:
-                from IPython.utils import traitlets
-
-            version = getattr(traitlets, 'version_info', None)
-            if version is not None and version >= (4, 1):
-                traitlets_new_api = True
-            else:
-                traitlets_new_api = False
-
-            # In IPython, the special variable '_i00' contains the last
-            # line entered by the user. This set up a notification for
-            # every time _i00 change (i.e., the user enter a statement).
-            input_queue = queue.Queue()
-            if traitlets_new_api:
-                self._interpreter.history_manager.observe(
-                    input_queue.put, '_i00')
-            else:
-                def notifier(name, new):
-                    input_queue.put({'new': new})
-                self._interpreter.history_manager.on_trait_change(
-                    notifier, '_i00')
-            try:
-                thread = Thread(target=self._interpreter.interact)
-                thread.start()
-                while thread.is_alive():
-                    try:
-                        statement = input_queue.get(timeout=0.2)['new']
-                        yield statement.splitlines()
-                    except queue.Empty:
-                        pass
-            finally:
-                if traitlets_new_api:
-                    self._interpreter.history_manager.unobserve(
-                        input_queue.put, '_i00')
-                else:
-                    self._interpreter.history_manager.on_trait_change(
-                        notifier, '_i00', remove=True)
+            thread = Thread(target=self._interpreter.interact)
+            thread.start()
+            while thread.is_alive():
+                try:
+                    statement = self._history_queue.get(timeout=0.2)
+                    yield statement.splitlines()
+                except queue.Empty:
+                    pass
         else:
             ps1 = self._colored('*green*', self._ps1)
             ps2 = self._colored('*green*', self._ps2)
             lines = []
             need_more = False
             print(end='\r', flush=True)
-            self._interacting = True
             while self._interacting:
                 try:
                     try:
@@ -217,6 +202,7 @@ class PresenterShell(object):
                     need_more = False
             print(flush=True)
         print(end=self._hl_ps1, flush=True)
+        self._interacting = False
 
     def ask_where_to_go(self, max_index):
         new_index = ask_index(max_index, self._color_scheme)
