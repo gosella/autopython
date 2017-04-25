@@ -39,9 +39,12 @@ def parse_command_line(kind):
     args = parser.parse_args()
 
     if not os.path.exists(args.SOURCE):
-        print("{}: file not found: '{}'".format(parser.prog, args.SOURCE),
-              file=sys.stderr)
-        sys.exit(1)
+        root, ext = os.path.splitext(args.SOURCE)
+        if not ext and not os.path.exists(args.SOURCE + '.py'):
+            print("{}: file not found: '{}'".format(parser.prog, args.SOURCE),
+                  file=sys.stderr)
+            sys.exit(1)
+        args.SOURCE += '.py'
 
     return parser, args
 
