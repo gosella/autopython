@@ -77,7 +77,13 @@ def autopython():
 def autoipython():
     parser, args = parse_command_line(AUTOIPYTHON)
 
-    from autopython.ipython import PresenterShell
+    import IPython
+    if IPython.version_info < (5, 0):
+        from autopython.ipython import PresenterShell
+    else:
+        print('AutoIPython: IPython >= 5.X is not supported. *sorry*',
+              file=sys.stderr)
+        sys.exit(1)
 
     color_scheme = args.color_scheme if args.highlight else None
     shell = PresenterShell(color_scheme=color_scheme)
