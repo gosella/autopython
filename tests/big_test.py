@@ -5,7 +5,6 @@ print('¡Hola mundo!')
 if True:
     a = 1
     print('OK')
-     
     c = 1
 else:
     a = 2

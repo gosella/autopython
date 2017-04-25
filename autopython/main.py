@@ -77,7 +77,11 @@ def autopython():
 def autoipython():
     parser, args = parse_command_line(AUTOIPYTHON)
 
-    from autopython.ipython import PresenterShell
+    import IPython
+    if IPython.version_info < (5, 0):
+        from autopython.ipython import PresenterShell
+    else:
+        from autopython.ipython5 import PresenterShell
 
     color_scheme = args.color_scheme if args.highlight else None
     shell = PresenterShell(color_scheme=color_scheme)

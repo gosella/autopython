@@ -101,6 +101,8 @@ if HAVE_HIGHLIGHTING:
             Token.String.Regex:           '',
             Token.String.Single:          '',
             Token.String.Symbol:          '',
+            Token.Prompt:                 'darkgreen',
+            Token.PromptNum:              'green',
             Token.Generic:                '',
             Token.Generic.Deleted:        'red',
             Token.Generic.Emph:           '',

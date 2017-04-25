@@ -9,5 +9,6 @@ if True:
     b = 1
 else:
     a = 3
+    b = 2
 
 print(a)
