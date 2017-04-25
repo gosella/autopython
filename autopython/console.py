@@ -1,13 +1,15 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# Mostly refactored from:
-# URL: https://bitbucket.org/techtonik/python-pager
+# Refactored from: https://bitbucket.org/techtonik/python-pager
 # Author:  anatoly techtonik <techtonik@gmail.com>
 # License: Public Domain (use MIT if the former doesn't work for you)
 
 import os
 import sys
+
+from collections import namedtuple
+
+terminal_size = namedtuple("terminal_size", "columns lines")
 
 # Dealing with the terminal in different OSs
 if os.name == 'nt':
@@ -40,12 +42,13 @@ if os.name == 'nt':
                     ("srWindow", SMALL_RECT),
                     ("dwMaximumWindowSize", DWORD)]
 
-    def _get_window_size():
+    def _get_terminal_size():
         """Return (width, height) of available window area on Windows.
            (0, 0) if no console is allocated.
         """
         sbi = CONSOLE_SCREEN_BUFFER_INFO()
-        ret = windll.kernel32.GetConsoleScreenBufferInfo(console_handle, byref(sbi))
+        ret = windll.kernel32.GetConsoleScreenBufferInfo(console_handle,
+                                                         byref(sbi))
         if ret == 0:
             return 0, 0
         return (sbi.srWindow.Right - sbi.srWindow.Left + 1,
@@ -54,12 +57,11 @@ if os.name == 'nt':
     import msvcrt
 
     def _getch():
-        a = msvcrt.getwch()
-        if a == '\x00' or a == '\xe0':
-            b = msvcrt.getwch()
-            return [a, b]
-        else:
-            return a
+        ch1 = msvcrt.getwch()
+        if ch1 == u'\x00' or ch1 == u'\xe0':
+            ch2 = msvcrt.getwch()
+            return [ch1, ch2]
+        return ch1
 
     def enable_echo():
         pass
@@ -67,21 +69,22 @@ if os.name == 'nt':
     def disable_echo():
         pass
 
-    ESC = '\x1b'
-    ENTER = '\x0d'
-    LEFT = ['\xe0', 'K']
-    UP = ['\xe0', 'H']
-    RIGHT = ['\xe0', 'M']
-    DOWN = ['\xe0', 'P']
-    PGUP = ['\xe0', 'I']
-    PGDN = ['\xe0', 'Q']
+    ESC = u'\x1b'
+    ENTER = u'\x0d'
+    LEFT = [u'\xe0', u'K']
+    UP = [u'\xe0', u'H']
+    RIGHT = [u'\xe0', u'M']
+    DOWN = [u'\xe0', u'P']
+    PGUP = [u'\xe0', u'I']
+    PGDN = [u'\xe0', u'Q']
 
 elif os.name == 'posix':
-    from fcntl import ioctl
-    from termios import TIOCGWINSZ
-    from array import array
+    import array
+    import fcntl
+    import termios
+    import tty
 
-    def _get_window_size():
+    def _get_terminal_size():
         """Return (width, height) of console terminal on POSIX system.
            (0, 0) on IOError, i.e. when no console is allocated.
         """
@@ -96,18 +99,15 @@ elif os.name == 'posix':
             unsigned short ws_ypixel;   /* unused */
         };
         """
-        winsize = array("H", [0] * 4)
+        winsize = array.array("H", [0] * 4)
         try:
-            ioctl(sys.stdout.fileno(), TIOCGWINSZ, winsize)
+            fcntl.ioctl(sys.stdout.fileno(), termios.TIOCGWINSZ, winsize)
         except IOError:
             # for example IOError: [Errno 25] Inappropriate ioctl for device
             # when output is redirected
             # [ ] TODO: check fd with os.isatty
             pass
         return winsize[1], winsize[0]
-
-    import tty
-    import termios
 
     def _getch():
         fd = sys.stdin.fileno()
@@ -121,7 +121,7 @@ elif os.name == 'posix':
             # tty.setcbreak() is just a helper for tcsetattr() call, see
             # http://hg.python.org/cpython/file/c6880edaf6f3/Lib/tty.py
             tty.setcbreak(fd)
-            ch = sys.stdin.read(1)
+            ch1 = sys.stdin.read(1)
 
             # clear input buffer placing all available chars into morech
             newattr = termios.tcgetattr(fd)   # change terminal settings
@@ -142,10 +142,10 @@ elif os.name == 'posix':
             termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
 
         if morech:
-            morech.insert(0, ch)
-            ch = morech
+            morech.insert(0, ch1)
+            ch1 = morech
 
-        return ch
+        return ch1
 
     def enable_echo():
         fd = sys.stdin.fileno()
@@ -173,27 +173,22 @@ else:
     raise ImportError("platform not supported")
 
 
-def getwidth():
+def get_terminal_size(fallback=(80, 24)):
     """
-    Return width of available window in characters.  If detection fails,
-    return value of standard width 80.  Coordinate of the last character
-    on a line is -1 from returned value.
+    Return the size of the terminal window (in characters).
+    The value returned is a named tuple containing `columns` and `lines`.
+
+    If the terminal size cannot be successfully queried, either because
+    the system doesn't support querying, or because we are not
+    connected to a terminal, the value given in fallback parameter
+    is used. Fallback defaults to (80, 24) which is the default
+    size used by many terminal emulators.
 
     Windows part uses console API through ctypes module.
     *nix part uses termios ioctl TIOCGWINSZ call.
     """
-    return _get_window_size()[0] or 80
-
-
-def getheight():
-    """
-    Return available window height in characters or 25 if detection fails.
-    Coordinate of the last line is -1 from returned value.
-
-    Windows part uses console API through ctypes module.
-    *nix part uses termios ioctl TIOCGWINSZ call.
-    """
-    return _get_window_size()[1] or 25
+    size = _get_terminal_size()
+    return terminal_size(size[0] or fallback[0], size[1] or fallback[1])
 
 
 def getch():
@@ -204,3 +199,6 @@ def getch():
     extra symbols in input buffer, this function returns list.
     """
     return _getch()
+
+
+__all__ = ['get_terminal_size', 'enable_echo', 'disable_echo', 'getch']
