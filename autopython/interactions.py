@@ -8,6 +8,20 @@ import time
 
 from . import console, highlighter as hl
 from .compat import input, print
+from .highlighter import Token
+
+
+def _tokenize(lexer, statement):
+    for _, ttype, text in lexer.get_tokens_unprocessed(statement):
+        if ttype == Token.Literal.String.Doc:
+            for line in text.splitlines(keepends=True):
+                if line.endswith('\n'):
+                    yield ttype, line[:-1]
+                    yield Token.Text, '\n'
+                else:
+                    yield ttype, line
+        else:
+            yield ttype, text
 
 
 def layout_code(lexer, statement, prompts, index_number=None, index_line=-1,
@@ -27,7 +41,7 @@ def layout_code(lexer, statement, prompts, index_number=None, index_line=-1,
     line = 0
     col = 0
     iter_prompts = iter(prompts)
-    for _, ttype, value in lexer.get_tokens_unprocessed(statement):
+    for ttype, text in _tokenize(lexer, statement):
         if col == 0:
             prompt, prompt_len = next(iter_prompts)
             yield line, 0, None, '\r' + prompt, False
@@ -38,26 +52,26 @@ def layout_code(lexer, statement, prompts, index_number=None, index_line=-1,
                 yield line, col, None, ' ' * width, False
                 yield line, col + width, hl.Token.Index, index_str, False
             yield line, 0, None, '\r' + prompt, False
-        if value == '':
+        if text == '':
             continue
-        elif value == '\n':
+        elif text == '\n':
             line += 1
             col = 0
             if line == max_line:
                 break
             yield line, col, None, '\n', False
         else:
-            new_col = col + len(value)
+            new_col = col + len(text)
             while new_col > width:
                 extra = new_col - width
-                yield line, col, ttype, value[:-extra], True
+                yield line, col, ttype, text[:-extra], True
                 yield line, new_col - extra, None, '\n', False
-                value = value[-extra:]
+                text = text[-extra:]
                 col = 0
-                new_col = len(value)
+                new_col = len(text)
                 width = console_width
 
-            yield line, col, ttype, value, True
+            yield line, col, ttype, text, True
             col = new_col
 
 
