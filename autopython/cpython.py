@@ -71,6 +71,7 @@ class PresenterShell(object):
         self._interpreter = None
         self._hl_ps1 = self._ps1 = '>>> '
         self._hl_ps2 = self._ps2 = '... '
+        self._output = None
         if color_scheme:
             color = get_color_for(Token.Generic.Prompt, color_scheme)
             self._hl_ps1 = ansiformat(color, self._ps1)
@@ -142,14 +143,32 @@ class PresenterShell(object):
               self._hl_ps1, sep='\n', end='', flush=True)
 
     def show(self, statement, prompts, index=None, index_line=-1,
-             typing_delay=0):
+             typing_delay=0, paginate=True):
+        if self._output is not None:
+            self._output.close()
+            self._output = None
         ps1 = self._hl_ps1, len(self._ps1)
         ps2 = self._hl_ps2, len(self._ps2)
         hl_prompts = (ps1 if p == 'ps1' else ps2 for p in prompts)
         tokens = layout_code(self._lexer, statement, hl_prompts,
                              index, index_line)
-        for _ in simulate_typing(tokens, self._color_scheme, typing_delay):
-            pass
+        output = simulate_typing(tokens, self._color_scheme, typing_delay)
+        if paginate:
+            max_line = statement.count('\n') - 1
+            for line_number, console_filled in output:
+                if console_filled and line_number != max_line:
+                    self._output = output
+                    return True
+        else:
+            for _ in output:
+                pass
+        return False
+
+    def show_more(self):
+        for _, console_filled in self._output:
+            if console_filled:
+                return True
+        return False
 
     def execute(self, statement, code=None):
         print(flush=True)

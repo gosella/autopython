@@ -57,7 +57,8 @@ COMMANDS_HELP = [
 
 
 class Presenter(object):
-    BEFORE_TYPING, BEFORE_EXECUTING, BEFORE_QUITING, QUITING = range(4)
+    (BEFORE_TYPING, MORE_TYPING, BEFORE_EXECUTING, BEFORE_QUITING,
+     QUITING) = range(5)
 
     def __init__(self, shell, typing_delay=30, logging=False):
         self._shell = shell
@@ -125,11 +126,17 @@ class Presenter(object):
                 self._log('Showing statement {} (on line {}):'.format(index,
                           info.line_number),
                           *(' ' + line for line in lines if line.strip()))
-                self._shell.show(info.statement, info.prompts, index,
-                                 info.first_line, self._typing_delay)
-                self._state = Presenter.BEFORE_EXECUTING
+                more = self._shell.show(info.statement, info.prompts, index,
+                                        info.first_line, self._typing_delay)
+                if more:
+                    self._state = Presenter.MORE_TYPING
+                else:
+                    self._state = Presenter.BEFORE_EXECUTING
             else:
                 self._quit()
+        elif self._state == Presenter.MORE_TYPING:
+            if not self._shell.show_more():
+                self._state = Presenter.BEFORE_EXECUTING
         elif self._state == Presenter.BEFORE_EXECUTING:
             info = self._statements[self._index]
             self._index += 1
@@ -142,10 +149,11 @@ class Presenter(object):
             self._state = Presenter.QUITING
 
     def _prev(self):
-        if self._state in (Presenter.BEFORE_TYPING,
+        if self._state in (Presenter.BEFORE_TYPING, Presenter.MORE_TYPING,
                            Presenter.BEFORE_EXECUTING):
             if self._index > 0:
-                if self._state == Presenter.BEFORE_EXECUTING:
+                if self._state in (Presenter.BEFORE_EXECUTING,
+                                   Presenter.MORE_TYPING):
                     self._shell.control_c()
                     self._state = Presenter.BEFORE_TYPING
                 self._index -= 1
@@ -163,13 +171,17 @@ class Presenter(object):
             if self._index > 0:
                 self._index -= 1
                 self._next()
+        elif self._state == Presenter.MORE_TYPING:
+            self._shell.control_c()
+            self._state = Presenter.BEFORE_TYPING
+            self._next()
         elif self._state == Presenter.BEFORE_EXECUTING:
             self._next()
 
     def _go_to(self):
         if not self._statements:
             return
-        if self._state in (Presenter.BEFORE_EXECUTING,
+        if self._state in (Presenter.MORE_TYPING, Presenter.BEFORE_EXECUTING,
                            Presenter.BEFORE_QUITING):
             self._shell.control_c()
             self._state = Presenter.BEFORE_TYPING
@@ -196,7 +208,7 @@ class Presenter(object):
         self._next()
 
     def _interact(self):
-        if self._state in (Presenter.BEFORE_EXECUTING,
+        if self._state in (Presenter.MORE_TYPING, Presenter.BEFORE_EXECUTING,
                            Presenter.BEFORE_QUITING):
             self._shell.control_c()
             self._state = Presenter.BEFORE_TYPING
@@ -209,7 +221,7 @@ class Presenter(object):
             self._log('Leaving interactive mode.')
 
     def _help(self):
-        if self._state in (Presenter.BEFORE_EXECUTING,
+        if self._state in (Presenter.MORE_TYPING, Presenter.BEFORE_EXECUTING,
                            Presenter.BEFORE_QUITING):
             self._shell.control_c()
             self._state = Presenter.BEFORE_TYPING
@@ -219,7 +231,8 @@ class Presenter(object):
         if self._state in (Presenter.BEFORE_QUITING, Presenter.QUITING):
             self._state = Presenter.QUITING
         else:
-            if self._state == Presenter.BEFORE_EXECUTING:
+            if self._state in (Presenter.MORE_TYPING,
+                               Presenter.BEFORE_EXECUTING):
                 self._shell.control_c()
             self._shell.quit()
             self._state = Presenter.BEFORE_QUITING

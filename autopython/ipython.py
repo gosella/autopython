@@ -68,6 +68,7 @@ class PresenterShell(object):
         self._shell_thread = None
         self._color_scheme = color_scheme
         self._lexer = IPythonLexer()
+        self._state = None
 
     def _create_shell(self):
         self._shell = Shell(self._input_queue, self._prompt_queue,
@@ -106,21 +107,41 @@ class PresenterShell(object):
         self._input_queue.put(Shell.INTERRUPT)
 
     def show(self, statement, prompts, index=None, index_line=-1,
-             typing_delay=0):
+             typing_delay=0, paginate=True):
         def generate_prompts():
             while True:
                 prompt, prompt_len = self._prompt_queue.get()
                 yield '\r' + prompt.lstrip('\n'), prompt_len
 
+        if self._state is not None:
+            self._state[0].close()
+            self._state = None
         lines = statement.splitlines()
         last_line_number = len(lines) - 1
         tokens = layout_code(self._lexer, statement, generate_prompts(),
                              index, index_line)
-        for line_number in simulate_typing(tokens,
-                                           color_scheme=self._color_scheme,
-                                           typing_delay=typing_delay):
+        output = simulate_typing(tokens, self._color_scheme, typing_delay)
+        if paginate:
+            for line_number, console_filled in output:
+                if console_filled and line_number != last_line_number:
+                    self._state = (output, lines, last_line_number)
+                    return True
+                if line_number < last_line_number:
+                    self._input_queue.put(lines[line_number])
+        else:
+            for line_number, _ in output:
+                if line_number < last_line_number:
+                    self._input_queue.put(lines[line_number])
+        return False
+
+    def show_more(self):
+        output, lines, last_line_number = self._state
+        for line_number, console_filled in output:
+            if console_filled:
+                return True
             if line_number < last_line_number:
                 self._input_queue.put(lines[line_number])
+        return False
 
     def execute(self, statement, code=None):
         print(flush=True)
@@ -160,9 +181,7 @@ class PresenterShell(object):
         while self._prompt_queue.qsize() == 0:
             pass
         tokens = layout_code(self._lexer, statement, generate_prompts())
-        for _ in simulate_typing(tokens,
-                                 color_scheme=self._color_scheme,
-                                 typing_delay=typing_delay):
+        for _ in simulate_typing(tokens, self._color_scheme, typing_delay):
             pass
 
     def help(self, commands_help):

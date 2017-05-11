@@ -133,6 +133,9 @@ else:
     Token.Index = object()
     Token.Prompt = object()
     Token.Text = object()
+    Token.Literal = object()
+    Token.Literal.String = object()
+    Token.Literal.String.Doc = object()
     Token.Generic = Token
 
     COLOR_SCHEMES = {'default': {}}
