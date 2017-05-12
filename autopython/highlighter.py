@@ -1,16 +1,24 @@
 # -*- coding: utf-8 -*-
 
+HAVE_HIGHLIGHTING = True
 try:
     import colorama
-    import pygments
-
     colorama.init()
-    HAVE_HIGHLIGHTING = True
-
     del colorama
-    del pygments
 except ImportError:
-    HAVE_HIGHLIGHTING = False
+    import os
+    if os.name == 'nt':
+        HAVE_HIGHLIGHTING = False
+        print("WARNING: 'colorama' is missing. Syntax highlighting won't work")
+    del os
+
+if HAVE_HIGHLIGHTING:
+    try:
+        import pygments
+        del pygments
+    except ImportError:
+        HAVE_HIGHLIGHTING = False
+        print("WARNING: 'pygments' is missing. Syntax highlighting won't work")
 
 
 class LineLexer(object):
