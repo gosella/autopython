@@ -103,8 +103,14 @@ class PresenterShell(object):
         self._start_shell_thread(interactive=False, initial_separator='')
 
     def control_c(self):
+        self._cleanup_pagination()
         print(end='^C')
         self._input_queue.put(Shell.INTERRUPT)
+
+    def _cleanup_pagination(self):
+        if self._state is not None:
+            self._state[0].close()
+            self._state = None
 
     def show(self, statement, prompts, index=None, index_line=-1,
              typing_delay=0, paginate=True):
@@ -112,10 +118,7 @@ class PresenterShell(object):
             while True:
                 prompt, prompt_len = self._prompt_queue.get()
                 yield '\r' + prompt.lstrip('\n'), prompt_len
-
-        if self._state is not None:
-            self._state[0].close()
-            self._state = None
+        self._cleanup_pagination()
         lines = statement.splitlines()
         last_line_number = len(lines) - 1
         tokens = layout_code(self._lexer, statement, generate_prompts(),

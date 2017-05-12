@@ -21,7 +21,7 @@ if 1 < 10:
 	print(b)
 	print(c)
 	2 == 5
-	'WTF? Is this really working as expected? Wow... It must be the product of long hours of hard labor iron out all the bugs than may or may not plage this awesome tool. :-)'
+	'WTF? Is this really working as expected? Wow... It must be the product of long hours of hard labor ironing out all the bugs than may or may not plague this awesome tool. :-)'
 	ok = False
 	ok = True
 	ok = False / True

@@ -139,14 +139,17 @@ class PresenterShell(object):
               sep='\n', end='', flush=True)
 
     def control_c(self):
+        self._cleanup_pagination()
         print('^C', self._colored('*red*', 'KeyboardInterrupt'),
               self._hl_ps1, sep='\n', end='', flush=True)
 
-    def show(self, statement, prompts, index=None, index_line=-1,
-             typing_delay=0, paginate=True):
+    def _cleanup_pagination(self):
         if self._output is not None:
             self._output.close()
             self._output = None
+
+    def show(self, statement, prompts, index=None, index_line=-1,
+             typing_delay=0, paginate=True):
         ps1 = self._hl_ps1, len(self._ps1)
         ps2 = self._hl_ps2, len(self._ps2)
         hl_prompts = (ps1 if p == 'ps1' else ps2 for p in prompts)
@@ -179,6 +182,7 @@ class PresenterShell(object):
         print(end=self._hl_ps1, flush=True)
 
     def interact(self):
+        self._cleanup_pagination()
         print(end='\r')
         self._interacting = True
         if self._use_ipython:
