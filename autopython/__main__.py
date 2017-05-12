@@ -2,30 +2,23 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import print_function
+
 import argparse
 import os.path
 import sys
+
 from autopython import Presenter, VERSION
+from autopython.cpython import PresenterShell
 
-
-AUTOPYTHON = object()
-AUTOIPYTHON = object()
-NAMES = {
-    AUTOPYTHON: 'AutoPython',
-    AUTOIPYTHON: 'AutoIPython',
-}
-
-
-def parse_command_line(kind):
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-v', '--version', action='version',
-                        version=NAMES[kind] + ' ' + VERSION)
+                        version='AutoPython ' + VERSION)
     parser.add_argument('-c', '--color-scheme', default='default',
                         help='Highligh code using the specified color scheme.')
-    if kind is AUTOPYTHON:
-        parser.add_argument('-i', '--ipython', dest='ipython', default=False,
-                            action='store_true',
-                            help='Use IPython for the interactive shell.')
+    parser.add_argument('-i', '--ipython', dest='ipython', default=False,
+                        action='store_true',
+                        help='Use IPython for the interactive shell.')
     parser.add_argument('-d', '--delay', type=int, default=30,
                         help='Delay (in ms) between every simulated '
                              'keystroke.')
@@ -51,10 +44,9 @@ def parse_command_line(kind):
             sys.exit(1)
         args.SOURCE += '.py'
 
-    return parser, args
+    color_scheme = args.color_scheme if args.highlight else None
+    shell = PresenterShell(color_scheme=color_scheme, use_ipython=args.ipython)
 
-
-def common(parser, args, shell):
     presenter = Presenter(shell, logging=args.logging, context_lines=args.lines,
                           paginate=args.pagination, typing_delay=args.delay)
     try:
@@ -70,31 +62,5 @@ def common(parser, args, shell):
     presenter.run()
 
 
-def autopython():
-    parser, args = parse_command_line(AUTOPYTHON)
-
-    from autopython.cpython import PresenterShell
-
-    color_scheme = args.color_scheme if args.highlight else None
-    shell = PresenterShell(color_scheme=color_scheme, use_ipython=args.ipython)
-    common(parser, args, shell)
-
-
-def autoipython():
-    parser, args = parse_command_line(AUTOIPYTHON)
-
-    import IPython
-    if IPython.version_info < (5, 0):
-        from autopython.ipython import PresenterShell
-    else:
-        print('AutoIPython: IPython >= 5.X is not supported. *sorry*',
-              file=sys.stderr)
-        sys.exit(1)
-
-    color_scheme = args.color_scheme if args.highlight else None
-    shell = PresenterShell(color_scheme=color_scheme)
-    common(parser, args, shell)
-
-
 if __name__ == '__main__':
-    autoipython()
+    main()

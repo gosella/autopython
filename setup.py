@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import codecs
-import os
 import sys
 
 try:
@@ -11,8 +10,7 @@ except ImportError:
 
 from autopython import VERSION
 
-README = os.path.join(os.path.dirname(__file__), 'README.rst')
-with codecs.open(README, encoding='utf-8') as readme_file:
+with codecs.open('README.rst', encoding='utf-8') as readme_file:
     long_description = readme_file.read()
 
 PY_VER = str(sys.version_info[0])
@@ -28,8 +26,7 @@ setup(
     packages=['autopython'],
     entry_points={
         'console_scripts': [
-          'autopython' + PY_VER + ' = autopython.main:autopython',
-          'autoipython' + PY_VER + ' = autopython.main:autoipython [ipython]',
+            'autopython' + PY_VER + ' = autopython.__main__:main',
         ],
     },
 
