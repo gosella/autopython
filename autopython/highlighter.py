@@ -130,12 +130,12 @@ else:
     class Token:
         pass
 
-    Token.Index = object()
-    Token.Prompt = object()
-    Token.Text = object()
-    Token.Literal = object()
-    Token.Literal.String = object()
-    Token.Literal.String.Doc = object()
+    Token.Index = Token()
+    Token.Prompt = Token()
+    Token.Text = Token()
+    Token.Literal = Token()
+    Token.Literal.String = Token()
+    Token.Literal.String.Doc = Token()
     Token.Generic = Token
 
     COLOR_SCHEMES = {'default': {}}
