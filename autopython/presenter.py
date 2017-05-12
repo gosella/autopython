@@ -60,11 +60,14 @@ class Presenter(object):
     (BEFORE_TYPING, MORE_TYPING, BEFORE_EXECUTING, BEFORE_QUITING,
      QUITING) = range(5)
 
-    def __init__(self, shell, typing_delay=30, logging=False):
+    def __init__(self, shell, logging=False, paginate=True, context_lines=1,
+                 typing_delay=30):
         self._shell = shell
-        self._typing_delay = typing_delay
         self._logging = logging
         self._logger = None
+        self._paginate = paginate
+        self._context_lines = context_lines
+        self._typing_delay = typing_delay
         self._script_loaded = False
 
     def load_file(self, filename):
@@ -127,7 +130,9 @@ class Presenter(object):
                           info.line_number),
                           *(' ' + line for line in lines if line.strip()))
                 more = self._shell.show(info.statement, info.prompts, index,
-                                        info.first_line, self._typing_delay)
+                                        info.first_line, self._typing_delay,
+                                        self._paginate, self._context_lines)
+                self._paginate
                 if more:
                     self._state = Presenter.MORE_TYPING
                 else:

@@ -113,7 +113,7 @@ class PresenterShell(object):
             self._state = None
 
     def show(self, statement, prompts, index=None, index_line=-1,
-             typing_delay=0, paginate=True):
+             typing_delay=0, paginate=False, context_lines=0):
         def generate_prompts():
             while True:
                 prompt, prompt_len = self._prompt_queue.get()
@@ -122,7 +122,7 @@ class PresenterShell(object):
         lines = statement.splitlines()
         last_line_number = len(lines) - 1
         tokens = layout_code(self._lexer, statement, generate_prompts(),
-                             index, index_line)
+                             index, index_line, context_lines)
         output = simulate_typing(tokens, self._color_scheme, typing_delay)
         if paginate:
             for line_number, console_filled in output:

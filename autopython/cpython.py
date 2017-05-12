@@ -149,12 +149,12 @@ class PresenterShell(object):
             self._output = None
 
     def show(self, statement, prompts, index=None, index_line=-1,
-             typing_delay=0, paginate=True):
+             typing_delay=0, paginate=False, context_lines=0):
         ps1 = self._hl_ps1, len(self._ps1)
         ps2 = self._hl_ps2, len(self._ps2)
         hl_prompts = (ps1 if p == 'ps1' else ps2 for p in prompts)
         tokens = layout_code(self._lexer, statement, hl_prompts,
-                             index, index_line)
+                             index, index_line, context_lines)
         output = simulate_typing(tokens, self._color_scheme, typing_delay)
         if paginate:
             max_line = statement.count('\n') - 1
