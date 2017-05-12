@@ -130,6 +130,18 @@ class PresenterShell(object):
                     color_scheme=self._color_scheme, locals=ns)
             else:
                 self._interpreter = PresenterInterpreter(locals=ns)
+            have_readline = True
+            try:
+                import readline
+            except ImportError:
+                try:
+                    import pyreadline as readline
+                except ImportError:
+                    have_readline = False
+            if have_readline:
+                import rlcompleter
+                readline.set_completer(rlcompleter.Completer(ns).complete)
+                readline.parse_and_bind("tab: complete")
 
     def begin(self):
         self.reset_interpreter()
@@ -203,8 +215,7 @@ class PresenterShell(object):
             while self._interacting:
                 try:
                     try:
-                        print(end=ps2 if need_more else ps1, flush=True)
-                        line = input()
+                        line = input(ps2 if need_more else ps1)
                         if PY2:
                             line = line.decode(sys.stdin.encoding)
                         lines.append(line)
