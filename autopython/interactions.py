@@ -131,7 +131,8 @@ def ask_index(max_index, color_scheme=None):
     def colored(color, text):
         return hl.ansiformat(color, text) if color_scheme else text
     try:
-        text = input(colored('*green*', '\n\nEnter new index: ')).strip()
+        print(end=colored('*green*', '\n\nEnter new index: '))
+        text = input().strip()
         if text:
             new_index = int(text)
             if new_index == 0 or abs(new_index) > max_index:
